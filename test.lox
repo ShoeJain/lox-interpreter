@@ -1,7 +1,8 @@
-(({)})      (}
-();
-{};;
-
-;
-
-(){.*+-}
+// this is a comment
+(( )){} // grouping stuff
+!*+-/=<> <= == // operators
+"Helo worl"
+"<= !" ==;
+;; "sdsf
+asdasfacas"
+asas "asasd

@@ -20,13 +20,13 @@ public class Scanner {
 
     public void scanTokens() {
         currLineNum = 1;
-        while (current < source.length()) {    //if we've reached the end of the file
+        while (!isEndOfFile()) {    //While we're not at the EOF
             start = current;
             scanNextToken();
         }
 
         //Add EOF token
-        tokenList.add(new Token(TokenType.EOF, "", null, currLineNum));
+        tokenList.add(new Token(TokenType.EOF, "", null, ++currLineNum));
         fileEnd = true;
     }
 
@@ -75,13 +75,37 @@ public class Scanner {
             case '=':
                 addToken(matchNextChar('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL);
                 break;
+            case '/':
+                if (matchNextChar('/')) { //Comment
+                    //Consume characters till we hit newline
+                    while (peekAhead() != '\n' && !isEndOfFile())
+                        ++current;
+                }
+                else { //Just a SLASH
+                    addToken(TokenType.SLASH);
+                }
+                break;
+            case '"':
+                while (peekAhead() != '"' && !isEndOfFile()) {
+                    if (peekAhead() == '\n')
+                        currLineNum++;
+                    ++current;
+                }
+                if (isEndOfFile()) { //If while loop terminated because file ended, throw an error
+                    //Throw error
+                    System.err.println("Expected \" at line " + currLineNum);
+                }
+                else { //Else, add string token
+                    addToken(TokenType.STRING, new String(source.substring(start + 1, current++))); //current++ consumes the closing "
+                }
+                break;
             case '\n':
                 currLineNum++;
             case '\r': //Handle carriage return (CR) ASCII 13 for windows written Lox files
             case '\s':
                 break;
             default:
-                System.out.println(
+                System.err.println(
                         "Error character \'" + currChar + "\' (ASCII: " + (int) currChar + ") at line " + currLineNum);
         }
     }
@@ -90,8 +114,22 @@ public class Scanner {
         return source.charAt(current++);
     }
 
+    private char peekAhead() {
+        if (isEndOfFile())
+            return '\0';
+        return source.charAt(current);
+    }
+
+    private boolean isEndOfFile() {
+        return current >= source.length();
+    }
+
     private boolean matchNextChar(char c) {
-        return source.charAt(current) == c;
+        if (peekAhead() == c) {
+            ++current;
+            return true;
+        }
+        return false;
     }
 
     public void addToken(TokenType token) {
