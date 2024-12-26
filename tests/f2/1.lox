@@ -1,0 +1,6 @@
+---
+expected_error_type: none
+---
+// This function, when invoked should print <<RANDOM_INTEGER>>
+fun <<RANDOM_STRING>>() { print <<RANDOM_INTEGER>>; }
+<<RANDOM_STRING>>();

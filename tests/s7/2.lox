@@ -1,0 +1,7 @@
+---
+expected_error_type: none
+---
+var <<RANDOM_STRING_4>> = "after";
+var <<RANDOM_STRING_4>> = "before";
+var <<RANDOM_STRING_4>> = <<RANDOM_STRING_4>>;
+print <<RANDOM_STRING_4>>;
