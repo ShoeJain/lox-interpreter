@@ -80,8 +80,7 @@ public class Scanner {
                     //Consume characters till we hit newline
                     while (peekAhead() != '\n' && !isEndOfFile())
                         ++current;
-                }
-                else { //Just a SLASH
+                } else { //Just a SLASH
                     addToken(TokenType.SLASH);
                 }
                 break;
@@ -94,8 +93,7 @@ public class Scanner {
                 if (isEndOfFile()) { //If while loop terminated because file ended, throw an error
                     //Throw error
                     System.err.println("Expected \" at line " + currLineNum);
-                }
-                else { //Else, add string token
+                } else { //Else, add string token
                     addToken(TokenType.STRING, new String(source.substring(start + 1, current++))); //current++ consumes the closing "
                 }
                 break;
@@ -105,9 +103,39 @@ public class Scanner {
             case '\s':
                 break;
             default:
-                System.err.println(
-                        "Error character \'" + currChar + "\' (ASCII: " + (int) currChar + ") at line " + currLineNum);
+                if (isNumeric(currChar)) { //Check if number
+                    //Handle number logic
+                    while (isNumeric(peekAhead())) ++current;   //Don't need explicit EOF check since peek returns \0 for EOF
+
+                    if (peekAhead() == '.' && isNumeric(peekAhead(1))) {
+                        ++current;
+
+                        while (isNumeric(peekAhead())) ++current;   //After decimal, keep looking ahead
+                    }
+                    addToken(TokenType.NUMBER, Double.parseDouble(source.substring(start, current)));
+                }
+                else if (isAlpha(currChar)) {   //Check if identifier - this conditional also goes over reserved keywords
+                    char peekedChar = peekAhead();
+                    while ((isNumeric(peekedChar) || isAlpha(peekedChar))) ++current;   //Don't need explicit EOF check since peek returns \0 for EOF
+                    addIdentifierToken();
+                }
+                else { //No valid token matches found for the next character/lexeme
+                    System.err.println(
+                            "Error character \'" + currChar + "\' (ASCII: " + (int) currChar + ") at line "
+                                    + currLineNum);
+                }
+
         }
+    }
+    
+    private boolean isAlpha(char c) {
+        return ((c >= 'a' && c <= 'z') || 
+                (c >= 'A' && c <= 'z') ||
+                c == '_');
+    }
+    
+    private boolean isNumeric(char c) {
+        return (c >= '0' && c <= '9');
     }
     
     private char advanceCurrent() {
@@ -115,9 +143,13 @@ public class Scanner {
     }
 
     private char peekAhead() {
-        if (isEndOfFile())
+        return peekAhead(0);
+    }
+
+    private char peekAhead(int lookahead) {
+        if (current + lookahead >= source.length())
             return '\0';
-        return source.charAt(current);
+        return source.charAt(current + lookahead);
     }
 
     private boolean isEndOfFile() {
@@ -130,6 +162,15 @@ public class Scanner {
             return true;
         }
         return false;
+    }
+
+    private void addIdentifierToken() {
+        String lexeme = source.substring(start, current);
+
+        //Check against keywords
+
+        //Add to token list
+        addToken(TokenType.IDENTIFIER, null);
     }
 
     public void addToken(TokenType token) {
