@@ -1,8 +1,14 @@
-// this is a comment
-(( )){} // grouping stuff
-!*+-/=<> <= == // operators
-"Helo worl"
-"<= !" ==;
-;; "sdsf
-asdasfacas"
-asas "asasd
+// clock test program
+var startTime = clock();
+var lastCheck = startTime;
+var running = true;
+
+print "Starting timer for 0.2 seconds";
+var startTime = clock();
+
+while (running) {
+  if (clock() > startTime + 0.2) {
+    print "Timer ended";
+    running = false;
+  }
+}
