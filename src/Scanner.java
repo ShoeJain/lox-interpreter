@@ -1,9 +1,32 @@
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.io.IOException;
+import java.io.InputStream;
 
 public class Scanner {
     public final String source;
     public final ArrayList<Token> tokenList = new ArrayList<>();
+
+    private static final Map<String, TokenType> keywords = new HashMap<>();
+
+    static {
+        keywords.put("and", TokenType.AND);
+        keywords.put("or", TokenType.OR);
+        keywords.put("true", TokenType.TRUE);
+        keywords.put("false", TokenType.FALSE);
+        keywords.put("while", TokenType.WHILE);
+        keywords.put("if", TokenType.IF);
+        keywords.put("else", TokenType.ELSE);
+        keywords.put("return", TokenType.RETURN);
+        keywords.put("fun", TokenType.FUN);
+        keywords.put("print", TokenType.PRINT);
+        keywords.put("super", TokenType.SUPER);
+        keywords.put("this", TokenType.THIS);
+        keywords.put("class", TokenType.CLASS);
+        keywords.put("nil", TokenType.NIL);
+        keywords.put("var", TokenType.VAR);
+    }
 
     private int start;
     private int current;
@@ -12,8 +35,8 @@ public class Scanner {
 
     private boolean fileEnd = false;
 
-    public Scanner(String source) {
-        this.source = source;
+    public Scanner(String in) {
+        this.source = in;
         this.start = 0;
         this.current = 0;
     }
@@ -31,7 +54,7 @@ public class Scanner {
     }
 
     public void scanNextToken() {
-        char currChar = advanceCurrent();
+        currChar = advanceCurrent();
         switch (currChar) {
             case '{':
                 addToken(TokenType.LEFT_BRACE);
@@ -113,18 +136,24 @@ public class Scanner {
                         while (isNumeric(peekAhead())) ++current;   //After decimal, keep looking ahead
                     }
                     addToken(TokenType.NUMBER, Double.parseDouble(source.substring(start, current)));
+                    break;
                 }
-                else if (isAlpha(currChar)) {   //Check if identifier - this conditional also goes over reserved keywords
+                if (isAlpha(currChar)) { //Check if identifier - this conditional also goes over reserved keywords
                     char peekedChar = peekAhead();
-                    while ((isNumeric(peekedChar) || isAlpha(peekedChar))) ++current;   //Don't need explicit EOF check since peek returns \0 for EOF
+                    while ((isNumeric(peekedChar) || isAlpha(peekedChar))) {
+                        ++current; //Don't need explicit EOF check since peek returns \0 for EOF
+                        peekedChar = peekAhead();
+                    }
+    
                     addIdentifierToken();
+                    break;
                 }
-                else { //No valid token matches found for the next character/lexeme
-                    System.err.println(
-                            "Error character \'" + currChar + "\' (ASCII: " + (int) currChar + ") at line "
-                                    + currLineNum);
-                }
-
+                
+                //No valid token matches found for the next character/lexeme
+                System.err.println(
+                        "Error character \'" + currChar + "\' (ASCII: " + (int) currChar + ") at line "
+                                + currLineNum);
+                break;
         }
     }
     
@@ -168,9 +197,12 @@ public class Scanner {
         String lexeme = source.substring(start, current);
 
         //Check against keywords
-
+        TokenType type = keywords.get(lexeme);
+        if (type == null) {
+            type = TokenType.IDENTIFIER;
+        }
         //Add to token list
-        addToken(TokenType.IDENTIFIER, null);
+        addToken(type, null);
     }
 
     public void addToken(TokenType token) {
