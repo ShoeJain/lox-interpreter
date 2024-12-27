@@ -1,14 +1,7 @@
 // clock test program
-var startTime = clock();
-var lastCheck = startTime;
-var running = true;
+/*
+* wow
+* hello!
+*/
 
-print "Starting timer for 0.2 seconds";
-var startTime = clock();
-
-while (running) {
-  if (clock() > startTime + 0.2) {
-    print "Timer ended";
-    running = false;
-  }
-}
+var wow = 123.3

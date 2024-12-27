@@ -33,8 +33,6 @@ public class Scanner {
     private char currChar;
     private int currLineNum;
 
-    private boolean fileEnd = false;
-
     public Scanner(String in) {
         this.source = in;
         this.start = 0;
@@ -50,7 +48,6 @@ public class Scanner {
 
         //Add EOF token
         tokenList.add(new Token(TokenType.EOF, "", null, ++currLineNum));
-        fileEnd = true;
     }
 
     public void scanNextToken() {
@@ -99,11 +96,37 @@ public class Scanner {
                 addToken(matchNextChar('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL);
                 break;
             case '/':
-                if (matchNextChar('/')) { //Comment
+                if (matchNextChar('/')) { //Single-line Comment
                     //Consume characters till we hit newline
                     while (peekAhead() != '\n' && !isEndOfFile())
                         ++current;
-                } else { //Just a SLASH
+                }
+                else if (matchNextChar('*')) {  //Multi-line comment
+                    //Consume characters till we hit newline, then check for * again
+                    boolean endFound = false;
+                    while (!endFound && !isEndOfFile()) {
+                        char peekedChar = peekAhead();
+                        if (peekedChar == '*') {
+                            if (peekAhead(1) == '/') {
+                                endFound = true;
+                                ++current;
+                            }
+                        }
+                        else if (peekedChar == '\n') {
+                            currLineNum++;
+                            if (peekAhead(1) != '*') {
+                                endFound = true;
+                                System.err.println("Invalid multi-line comment at line " + currLineNum);
+                            }
+                        }
+                        ++current;
+                    }
+
+                    if(isEndOfFile() && !endFound) {    //If it's end of file and we haven't found the end of the comment
+                        System.err.println("Unterminated multi-line comment at line " + currLineNum);
+                    }
+                }
+                else { //Just a SLASH
                     addToken(TokenType.SLASH);
                 }
                 break;
@@ -115,7 +138,7 @@ public class Scanner {
                 }
                 if (isEndOfFile()) { //If while loop terminated because file ended, throw an error
                     //Throw error
-                    System.err.println("Expected \" at line " + currLineNum);
+                    System.err.println("Unterminated string literal: Expected \" at line " + currLineNum);
                 } else { //Else, add string token
                     addToken(TokenType.STRING, new String(source.substring(start + 1, current++))); //current++ consumes the closing "
                 }
