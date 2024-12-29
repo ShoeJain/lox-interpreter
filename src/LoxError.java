@@ -2,6 +2,7 @@ public class LoxError { //Meant to be a Singleton
     enum Module {
         SCANNER,
         PARSER,
+        INTERPRETER,
     }
 
     private static LoxError instance = new LoxError();
@@ -15,5 +16,7 @@ public class LoxError { //Meant to be a Singleton
     public static void printError(Module mod, int lineNumber, String msg) {
         System.err.println("ERROR! " + mod + " at ln " + lineNumber + ": " + msg);
     }
+
+
 
 }

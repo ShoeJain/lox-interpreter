@@ -11,25 +11,15 @@ import java.util.List;
  * Add support for interactive session
  */
 public class Main {
-  public static void main(String[] args) {  
+    private static LoxInterpreter interp = new LoxInterpreter();
+
+    public static void main(String[] args) {  
         if (args.length > 1) {
             System.err.println("Too many args, use 1 or 0");
         } else if (args.length == 1) {
             interpretFile(args[0]);
         } else
             interactivePrompt();
-
-        /*Expression expression = new Expression.Binary(
-        new Expression.Unary(
-            new Token(TokenType.MINUS, "-", null, 1),
-            new Expression.Literal(123)),
-        new Token(TokenType.STAR, "*", null, 1),
-        new Expression.Grouping(
-                        new Expression.Literal(45.67)));
-            
-        System.out.println(new ExpressionPrinter().print(expression));*/
-
-
     }
   
     public static void interpretFile(String filename) {
@@ -68,6 +58,8 @@ public class Main {
             LoxParser parser = new LoxParser(tokenList);
             Expression singleExpression = parser.parse(); //TODO: Should this be the place to pass in tokenList?
             System.out.println(new ExpressionPrinter().print(singleExpression));
+
+            interp.interpret(singleExpression);
         } else {
             System.out.println("Empty program passed in, exiting...");
         }
