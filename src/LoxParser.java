@@ -41,6 +41,32 @@ public class LoxParser {
         return new ParserError();
     }
 
+    //This function attempts to advance from the current token until the beginning of the next statement is found
+    //To be used when a Parser error occurs to allow the parser to continue parsing past the error
+    private void synchronize() {
+        current++;
+
+        while (!isAtEnd()) {
+            if (tokens.get(current - 1).type == TokenType.SEMICOLON)    //If the previous token was semicolon, we are probably at a new statement
+                return;
+
+            switch (tokens.get(current).type) {     //Else if current token is a statement beginner token, we are at a new statement
+                case RETURN:
+                case FUN:
+                case VAR:
+                case FOR:
+                case IF:
+                case WHILE:
+                case PRINT:
+                    return;
+                default:
+                    break;
+            }
+
+            current++;  //Else we are not at the next statement, so keep advancing still we find the boundary
+        }
+    }
+
     private Expression expression() {
         return equality();
     }
@@ -118,11 +144,7 @@ public class LoxParser {
                 return new Expression.Literal(false);
             case LEFT_PAREN:
                 Expression expr = expression();
-                requireToken(TokenType.RIGHT_PAREN, );
-                if (!matchesOne(TokenType.RIGHT_PAREN))
-                    System.err.println(
-                            "Unterminated grouping: Missing ')' in expression at " + tokens.get(current).lineNumber);
-                current++; //TODO: This is here to move past the ) if it exists. What to do if it doesn't exist?
+                requireToken(TokenType.RIGHT_PAREN, "Unterminated grouping, expected ')'");
                 return new Expression.Grouping(expr);
             default:
                 return null;
