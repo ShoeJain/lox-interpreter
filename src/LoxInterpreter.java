@@ -1,5 +1,7 @@
 public class LoxInterpreter implements ExpressionVisitor<Object> {
 
+    final static String divideByZero = "Imagine that you have zero cookies and you split them evenly among zero friends. How many cookies does each person get? See? It doesn't make sense. And Cookie Monster is sad that there are no cookies, and you are sad that you have no friends.";
+
     public void interpret(Expression expr) {
         try {
             Object result = evaluate(expr);
@@ -37,6 +39,7 @@ public class LoxInterpreter implements ExpressionVisitor<Object> {
                 return (double) op1 - (double) op2;
             case SLASH:
                 checkBinaryNumberOperand(binaryExp.operator, op1, op2);
+                if((double) op2 == 0) throw new RuntimeError(binaryExp.operator, divideByZero);
                 return (double) op1 / (double) op2;
             case STAR:
                 checkBinaryNumberOperand(binaryExp.operator, op1, op2);
