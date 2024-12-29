@@ -86,6 +86,12 @@ public class Scanner {
             case ';':
                 addToken(TokenType.SEMICOLON);
                 break;
+            case '?':
+                addToken(TokenType.QUESTION);
+                break;
+            case ':':
+                addToken(TokenType.COLON);
+                break;
             case '!':
                 addToken(matchNextChar('=') ? TokenType.NOT_EQUAL : TokenType.NOT);
                 break;

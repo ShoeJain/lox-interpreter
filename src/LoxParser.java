@@ -1,7 +1,9 @@
 import java.util.List;
 
+//a==b?c==d:e==f ? true:false;
 /*
-    expression     → equality ;
+    expression     → ternary (, tarnary)* ;
+    ternary        → equality (? equality : equality)* ;
     equality       → comparison ( ( "!=" | "==" ) comparison )* ;
     comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
     term           → factor ( ( "-" | "+" ) factor )* ;
@@ -83,14 +85,37 @@ public class LoxParser {
     public Expression parse() {
         try {
             return expression();
-        } 
-        catch (ParserError err) {
+        } catch (ParserError err) {
             return null;
         }
     }
 
-    private Expression expression() {   //expression     → equality ;
-        return equality();
+    //Is supposed to discard the left most expression
+    private Expression expression() { //expression     → ternary (, tarnary)* ;
+        Expression expr = ternary();
+
+        while (matchesOne(TokenType.COMMA)) {
+            current++;
+            expr = ternary();
+        }
+
+        return expr;
+    }
+    
+    private Expression ternary() {      //ternary        → equality (? equality : equality)* ;
+        Expression expr = equality();
+
+        while (matchesOne(TokenType.QUESTION)) {
+            Token question = tokens.get(current++);
+            Expression trueCase = equality();
+            requireToken(TokenType.COLON, "Missing ':' in ternary condition");
+            Token colon = tokens.get(current - 1);
+            Expression falseCase = equality();
+            Expression decisions = new Expression.Binary(trueCase, colon, falseCase);
+            expr = new Expression.Binary(expr, question, decisions);
+        }
+
+        return expr;
     }
 
     private Expression equality() {     //equality       → comparison ( ( "!=" | "==" ) comparison )* ;
