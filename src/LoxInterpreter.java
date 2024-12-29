@@ -1,18 +1,24 @@
-public class LoxInterpreter implements ExpressionVisitor<Object> {
+import java.util.ArrayList;
+import java.util.List;
+
+public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisitor<Void> {
 
     final static String divideByZero = "Imagine that you have zero cookies and you split them evenly among zero friends. How many cookies does each person get? See? It doesn't make sense. And Cookie Monster is sad that there are no cookies, and you are sad that you have no friends.";
 
-    public void interpret(Expression expr) {
+    public void interpret(List<Statement> program) {
         try {
-            Object result = evaluate(expr);
-            System.out.println(objectToString(result));
+            //Object result = evaluateExpression(expr);
+            //System.out.println(objectToString(result));
+            for (Statement stmt : program) {
+                stmt.accept(this);
+            }
         }
-        catch (RuntimeError e) {
+        catch (LoxError.RuntimeError e) {
             LoxError.printError(LoxError.Module.INTERPRETER, e.token.lineNumber, e.getMessage());
         }
     }
 
-    private Object evaluate(Expression expr) {
+    private Object evaluateExpression(Expression expr) {
         return expr.accept(this);
     }
 
@@ -24,8 +30,8 @@ public class LoxInterpreter implements ExpressionVisitor<Object> {
 
     @Override
     public Object visitBinary(Expression.Binary binaryExp) {
-        Object op1 = evaluate(binaryExp.left);
-        Object op2 = evaluate(binaryExp.right);
+        Object op1 = evaluateExpression(binaryExp.left);
+        Object op2 = evaluateExpression(binaryExp.right);
 
         switch (binaryExp.operator.type) {
             case PLUS:
@@ -33,13 +39,13 @@ public class LoxInterpreter implements ExpressionVisitor<Object> {
                     return (double) op1 + (double) op2;
                 if (op1 instanceof String && op2 instanceof String)
                     return (String) op1 + (String) op2;
-                throw new RuntimeError(binaryExp.operator, "Operands must both be numbers or strings");
+                throw new LoxError.RuntimeError(binaryExp.operator, "Operands must both be numbers or strings");
             case MINUS:
                 checkBinaryNumberOperand(binaryExp.operator, op1, op2);
                 return (double) op1 - (double) op2;
             case SLASH:
                 checkBinaryNumberOperand(binaryExp.operator, op1, op2);
-                if((double) op2 == 0) throw new RuntimeError(binaryExp.operator, divideByZero);
+                if((double) op2 == 0) throw new LoxError.RuntimeError(binaryExp.operator, divideByZero);
                 return (double) op1 / (double) op2;
             case STAR:
                 checkBinaryNumberOperand(binaryExp.operator, op1, op2);
@@ -53,37 +59,37 @@ public class LoxInterpreter implements ExpressionVisitor<Object> {
                     return (double) op1 == (double) op2;
                 if (op1 instanceof String && op2 instanceof String)
                     return ((String) op1).compareTo((String) op2) == 0 ? true : false;
-                throw new RuntimeError(binaryExp.operator, "Operands must both be numbers or strings");
+                throw new LoxError.RuntimeError(binaryExp.operator, "Operands must both be numbers or strings");
             case NOT_EQUAL:
                 if (op1 instanceof Double && op2 instanceof Double)
                     return (double) op1 != (double) op2;
                 if (op1 instanceof String && op2 instanceof String)
                     return ((String) op1).compareTo((String) op2) != 0 ? true : false;
-                throw new RuntimeError(binaryExp.operator, "Operands must both be numbers or strings");
+                throw new LoxError.RuntimeError(binaryExp.operator, "Operands must both be numbers or strings");
             case GREATER_EQUAL:
                 if (op1 instanceof Double && op2 instanceof Double)
                     return (double) op1 >= (double) op2;
                 if (op1 instanceof String && op2 instanceof String)
                     return ((String) op1).compareTo((String) op2) >= 0 ? true : false;
-                throw new RuntimeError(binaryExp.operator, "Operands must both be numbers or strings");
+                throw new LoxError.RuntimeError(binaryExp.operator, "Operands must both be numbers or strings");
             case LESSER_EQUAL:
                 if (op1 instanceof Double && op2 instanceof Double)
                     return (double) op1 <= (double) op2;
                 if (op1 instanceof String && op2 instanceof String)
                     return ((String) op1).compareTo((String) op2) <= 0 ? true : false;
-                throw new RuntimeError(binaryExp.operator, "Operands must both be numbers or strings");
+                throw new LoxError.RuntimeError(binaryExp.operator, "Operands must both be numbers or strings");
             case GREATER:
                 if (op1 instanceof Double && op2 instanceof Double)
                     return (double) op1 > (double) op2;
                 if (op1 instanceof String && op2 instanceof String)
                     return ((String) op1).compareTo((String) op2) > 0 ? true : false;
-                throw new RuntimeError(binaryExp.operator, "Operands must both be numbers or strings");
+                throw new LoxError.RuntimeError(binaryExp.operator, "Operands must both be numbers or strings");
             case LESSER:
                 if (op1 instanceof Double && op2 instanceof Double)
                     return (double) op1 < (double) op2;
                 if (op1 instanceof String && op2 instanceof String)
                     return ((String) op1).compareTo((String) op2) < 0 ? true : false;
-                throw new RuntimeError(binaryExp.operator, "Operands must both be numbers or strings");
+                throw new LoxError.RuntimeError(binaryExp.operator, "Operands must both be numbers or strings");
             default:
                 return null;
         }
@@ -91,7 +97,7 @@ public class LoxInterpreter implements ExpressionVisitor<Object> {
 
     @Override
     public Object visitUnary(Expression.Unary unaryExp) {
-        Object expressionResult = evaluate(unaryExp.expr);
+        Object expressionResult = evaluateExpression(unaryExp.expr);
 
         switch (unaryExp.operator.type) {
             case MINUS:
@@ -106,7 +112,7 @@ public class LoxInterpreter implements ExpressionVisitor<Object> {
 
     @Override
     public Object visitGrouping(Expression.Grouping groupingExp) {
-        return evaluate(groupingExp.expr);
+        return evaluateExpression(groupingExp.expr);
     }
 
     @Override
@@ -125,13 +131,26 @@ public class LoxInterpreter implements ExpressionVisitor<Object> {
     private void checkUnaryNumberOperand(Token operator, Object operand) {
         if (operand instanceof Double)
             return;
-        throw new RuntimeError(operator, "Invalid operand type for operation");
+        throw new LoxError.RuntimeError(operator, "Invalid operand type for operation");
     }
 
     private void checkBinaryNumberOperand(Token operator, Object operand1, Object operand2) {
         if (operand1 instanceof Double && operand2 instanceof Double)
             return;
-        throw new RuntimeError(operator, "Invalid operand types for operation");
+        throw new LoxError.RuntimeError(operator, "Invalid operand types for operation");
+    }
+
+    @Override
+    public Void visitExpressionStatement(Statement.ExpressionStmt statement) {
+        evaluateExpression(statement.expr);
+        return null;
+    }
+
+    @Override
+    public Void visitPrintStatement(Statement.Print statement) {
+        Object result = evaluateExpression(statement.expr);
+        System.out.println(objectToString(result));
+        return null;
     }
 
 }

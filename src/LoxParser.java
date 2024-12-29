@@ -1,7 +1,13 @@
+import java.util.ArrayList;
 import java.util.List;
 
 //a==b?c==d:e==f ? true:false;
 /*
+    program          statement* EOF ;
+    statement        exprStmt | printStmt ;
+    exprStmt         expression ";" ;
+    printStmt        "print" expression ";" ;
+
     expression     → ternary (, tarnary)* ;
     ternary        → equality (? equality : equality)* ;
     equality       → comparison ( ( "!=" | "==" ) comparison )* ;
@@ -17,10 +23,20 @@ public class LoxParser {
     private final List<Token> tokens;
     private int current = 0;
 
-    private static class ParserError extends RuntimeException {}
-
     LoxParser(List<Token> tokens) {
         this.tokens = tokens;
+    }
+
+    public List<Statement> parseProgram() {
+        List<Statement> statementList = new ArrayList<>();
+        try {
+            while (!isAtEnd()) {
+                statementList.add(statement());
+            }
+        } catch (LoxError.ParserError err) {
+            LoxError.printError(LoxError.Module.PARSER, err.token.lineNumber, err.getMessage());
+        }
+        return statementList;
     }
 
     private boolean isAtEnd() {
@@ -48,12 +64,7 @@ public class LoxParser {
             return;
         }
 
-        throw error(tokens.get(current), message);
-    }
-
-    private ParserError error(Token token, String message) {
-        LoxError.printError(LoxError.Module.PARSER, token.lineNumber, message);
-        return new ParserError();
+        throw new LoxError.ParserError(tokens.get(current), message);
     }
 
     //This function attempts to advance from the current token until the beginning of the next statement is found
@@ -81,13 +92,31 @@ public class LoxParser {
             current++; //Else we are not at the next statement, so keep advancing still we find the boundary
         }
     }
-    
-    public Expression parse() {
-        try {
-            return expression();
-        } catch (ParserError err) {
-            return null;
+
+    private Statement statement() {
+        Statement stmt;
+        switch (tokens.get(current).type) {
+            case PRINT:
+                stmt = printStatement();
+                break;
+            default:
+                stmt = expressionStatement();
+                break;
         }
+        return stmt;
+    }
+
+    private Statement expressionStatement() {
+        Expression expr = expression();
+        requireToken(TokenType.SEMICOLON, "Missing ';'");
+        return new Statement.ExpressionStmt(expr);
+    }
+
+    private Statement.Print printStatement() {
+        current++; //Increment to skip the "print" that brought us here
+        Expression expr = expression();
+        requireToken(TokenType.SEMICOLON, "Missing ';'");
+        return new Statement.Print(expr);
     }
 
     //Is supposed to discard the left most expression
@@ -194,7 +223,7 @@ public class LoxParser {
                 requireToken(TokenType.RIGHT_PAREN, "Unterminated grouping, expected ')'");
                 return new Expression.Grouping(expr);
             default:
-                throw error(tokens.get(current), "Expected an expression"); //If we fall through the tree and don't find an expression beginner token
+                throw new LoxError.ParserError(tokens.get(current), "Expected an expression"); //If we fall through the tree and don't find an expression beginner token
         }
     }
 }

@@ -52,14 +52,14 @@ public class Main {
             //Scan input program
             Scanner tokenScanner = new Scanner(program);
             List<Token> tokenList = tokenScanner.scanTokens();
-            tokenScanner.printTokens();
+            //tokenScanner.printTokens();
 
             //Parse token list output by Scanner
             LoxParser parser = new LoxParser(tokenList);
-            Expression singleExpression = parser.parse(); //TODO: Should this be the place to pass in tokenList?
-            System.out.println(new ExpressionPrinter().print(singleExpression));
+            List<Statement> statements = parser.parseProgram(); //TODO: Should this be the place to pass in tokenList?
+            //System.out.println(new ExpressionPrinter().print(singleExpression));
 
-            interp.interpret(singleExpression);
+            interp.interpret(statements);
         } else {
             System.out.println("Empty program passed in, exiting...");
         }
