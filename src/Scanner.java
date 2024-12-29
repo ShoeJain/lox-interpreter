@@ -116,14 +116,14 @@ public class Scanner {
                             currLineNum++;
                             if (peekAhead(1) != '*') {
                                 endFound = true;
-                                System.err.println("Invalid multi-line comment at line " + currLineNum);
+                                LoxError.printError(LoxError.Module.SCANNER, currLineNum, "Invalid multi-line comment");
                             }
                         }
                         ++current;
                     }
 
-                    if(isEndOfFile() && !endFound) {    //If it's end of file and we haven't found the end of the comment
-                        System.err.println("Unterminated multi-line comment at line " + currLineNum);
+                    if (isEndOfFile() && !endFound) { //If it's end of file and we haven't found the end of the comment
+                        LoxError.printError(LoxError.Module.SCANNER, currLineNum, "Unterminated multi-line comment");
                     }
                 }
                 else { //Just a SLASH
@@ -138,7 +138,7 @@ public class Scanner {
                 }
                 if (isEndOfFile()) { //If while loop terminated because file ended, throw an error
                     //Throw error
-                    System.err.println("Unterminated string literal: Expected \" at line " + currLineNum);
+                    LoxError.printError(LoxError.Module.SCANNER, currLineNum, "Unterminated string literal");
                 } else { //Else, add string token
                     addToken(TokenType.STRING, new String(source.substring(start + 1, current++))); //current++ consumes the closing "
                 }
@@ -173,9 +173,7 @@ public class Scanner {
                 }
                 
                 //No valid token matches found for the next character/lexeme
-                System.err.println(
-                        "Error character \'" + currChar + "\' (ASCII: " + (int) currChar + ") at line "
-                                + currLineNum);
+                LoxError.printError(LoxError.Module.SCANNER, currLineNum, "Error character \'" + currChar + "\' (ASCII: " + (int) currChar + ")");
                 break;
         }
     }

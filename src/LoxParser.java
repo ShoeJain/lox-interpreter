@@ -4,6 +4,8 @@ public class LoxParser {
     private final List<Token> tokens;
     private int current = 0;
 
+    private static class ParserError extends RuntimeException {}
+
     LoxParser(List<Token> tokens) {
         this.tokens = tokens;
     }
@@ -24,7 +26,19 @@ public class LoxParser {
         if (isAtEnd())
             return false;
         else
-            return tokens.get(current).type == type; 
+            return tokens.get(current).type == type;
+    }
+    
+    private void requireToken(TokenType type, String message) {
+        if (tokens.get(current).type == type)
+            current++;
+
+        throw error(tokens.get(current), message);
+    }
+
+    private ParserError error(Token token, String message) {
+        LoxError.printError(LoxError.Module.PARSER, token.lineNumber, message);
+        return new ParserError();
     }
 
     private Expression expression() {
@@ -104,6 +118,7 @@ public class LoxParser {
                 return new Expression.Literal(false);
             case LEFT_PAREN:
                 Expression expr = expression();
+                requireToken(TokenType.RIGHT_PAREN, );
                 if (!matchesOne(TokenType.RIGHT_PAREN))
                     System.err.println(
                             "Unterminated grouping: Missing ')' in expression at " + tokens.get(current).lineNumber);
