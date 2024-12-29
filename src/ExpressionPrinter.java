@@ -5,7 +5,7 @@ public class ExpressionPrinter implements ExpressionVisitor<String> {
     }
     @Override
     public String visitBinary(Expression.Binary binaryExp) {
-        return "(" + binaryExp.operator.lexeme + " " + binaryExp.left.accept(this) + " " + binaryExp.right.accept(this);
+        return "(" + binaryExp.operator.lexeme + " " + binaryExp.left.accept(this) + " " + binaryExp.right.accept(this) + ")";
     }
 
     @Override

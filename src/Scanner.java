@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.io.IOException;
@@ -6,7 +7,7 @@ import java.io.InputStream;
 
 public class Scanner {
     public final String source;
-    public final ArrayList<Token> tokenList = new ArrayList<>();
+    public final List<Token> tokenList = new ArrayList<>();
 
     private static final Map<String, TokenType> keywords = new HashMap<>();
 
@@ -39,7 +40,7 @@ public class Scanner {
         this.current = 0;
     }
 
-    public void scanTokens() {
+    public List<Token> scanTokens() {
         currLineNum = 1;
         while (!isEndOfFile()) {    //While we're not at the EOF
             start = current;
@@ -48,6 +49,8 @@ public class Scanner {
 
         //Add EOF token
         tokenList.add(new Token(TokenType.EOF, "", null, ++currLineNum));
+
+        return tokenList;
     }
 
     public void scanNextToken() {
@@ -236,8 +239,10 @@ public class Scanner {
     }
     
     public void printTokens() {
+        System.out.println("=== Lexicographic Scanning ===");
         for (Token t : tokenList) {
             System.out.println(t.toString());
         }
+        System.out.println("==============================");
     }
 }

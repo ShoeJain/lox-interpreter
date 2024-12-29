@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 /*
  * TODOs:
@@ -11,14 +12,14 @@ import java.nio.file.Path;
  */
 public class Main {
   public static void main(String[] args) {  
-        /*if (args.length > 1) {
+        if (args.length > 1) {
             System.err.println("Too many args, use 1 or 0");
         } else if (args.length == 1) {
             interpretFile(args[0]);
         } else
-            interactivePrompt();*/
+            interactivePrompt();
 
-        Expression expression = new Expression.Binary(
+        /*Expression expression = new Expression.Binary(
         new Expression.Unary(
             new Token(TokenType.MINUS, "-", null, 1),
             new Expression.Literal(123)),
@@ -26,7 +27,9 @@ public class Main {
         new Expression.Grouping(
                         new Expression.Literal(45.67)));
             
-        System.out.println(new ExpressionPrinter().print(expression));
+        System.out.println(new ExpressionPrinter().print(expression));*/
+
+
     }
   
     public static void interpretFile(String filename) {
@@ -56,9 +59,15 @@ public class Main {
 
     public static void interpret(String program) {
         if (program.length() > 0) {
+            //Scan input program
             Scanner tokenScanner = new Scanner(program);
-            tokenScanner.scanTokens();
+            List<Token> tokenList = tokenScanner.scanTokens();
             tokenScanner.printTokens();
+
+            //Parse token list output by Scanner
+            LoxParser parser = new LoxParser(tokenList);
+            Expression singleExpression = parser.parse(); //TODO: Should this be the place to pass in tokenList?
+            System.out.println(new ExpressionPrinter().print(singleExpression));
         } else {
             System.out.println("Empty program passed in, exiting...");
         }

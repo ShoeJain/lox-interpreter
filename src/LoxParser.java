@@ -1,5 +1,16 @@
 import java.util.List;
 
+/*
+    expression     → equality ;
+    equality       → comparison ( ( "!=" | "==" ) comparison )* ;
+    comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+    term           → factor ( ( "-" | "+" ) factor )* ;
+    factor         → unary ( ( "/" | "*" ) unary )* ;
+    unary          → ( "!" | "-" ) unary
+                | primary ;
+    primary        → NUMBER | STRING | "true" | "false" | "nil"
+                | "(" expression ")" ;
+ */
 public class LoxParser {
     private final List<Token> tokens;
     private int current = 0;
@@ -30,8 +41,10 @@ public class LoxParser {
     }
     
     private void requireToken(TokenType type, String message) {
-        if (tokens.get(current).type == type)
+        if (tokens.get(current).type == type) {
             current++;
+            return;
+        }
 
         throw error(tokens.get(current), message);
     }
@@ -47,10 +60,10 @@ public class LoxParser {
         current++;
 
         while (!isAtEnd()) {
-            if (tokens.get(current - 1).type == TokenType.SEMICOLON)    //If the previous token was semicolon, we are probably at a new statement
+            if (tokens.get(current - 1).type == TokenType.SEMICOLON) //If the previous token was semicolon, we are probably at a new statement
                 return;
 
-            switch (tokens.get(current).type) {     //Else if current token is a statement beginner token, we are at a new statement
+            switch (tokens.get(current).type) { //Else if current token is a statement beginner token, we are at a new statement
                 case RETURN:
                 case FUN:
                 case VAR:
@@ -63,15 +76,24 @@ public class LoxParser {
                     break;
             }
 
-            current++;  //Else we are not at the next statement, so keep advancing still we find the boundary
+            current++; //Else we are not at the next statement, so keep advancing still we find the boundary
+        }
+    }
+    
+    public Expression parse() {
+        try {
+            return expression();
+        } 
+        catch (ParserError err) {
+            return null;
         }
     }
 
-    private Expression expression() {
+    private Expression expression() {   //expression     → equality ;
         return equality();
     }
 
-    private Expression equality() {
+    private Expression equality() {     //equality       → comparison ( ( "!=" | "==" ) comparison )* ;
         Expression expr = comparision();
 
         while (matchesOne(TokenType.NOT_EQUAL, TokenType.EQUAL_EQUAL)) {
@@ -83,7 +105,7 @@ public class LoxParser {
         return expr;
     }
 
-    private Expression comparision() {
+    private Expression comparision() {  //comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
         Expression expr = term();
 
         while (matchesOne(TokenType.GREATER, TokenType.LESSER, TokenType.GREATER_EQUAL, TokenType.LESSER_EQUAL)) {
@@ -96,7 +118,7 @@ public class LoxParser {
         return expr;
     }
     
-    private Expression term() {
+    private Expression term() {         //term           → factor ( ( "-" | "+" ) factor )* ;
         Expression expr = factor();
 
         while (matchesOne(TokenType.PLUS, TokenType.MINUS)) {
@@ -109,7 +131,7 @@ public class LoxParser {
         return expr;
     }
 
-    private Expression factor() {
+    private Expression factor() {       //factor         → unary ( ( "/" | "*" ) unary )* ;
         Expression expr = unary();
 
         while (matchesOne(TokenType.SLASH, TokenType.STAR)) {
@@ -122,7 +144,7 @@ public class LoxParser {
         return expr;
     }
 
-    private Expression unary() {
+    private Expression unary() {        //unary          → (( "!" | "-" ) unary) | primary;
         if (matchesOne(TokenType.NOT, TokenType.MINUS)) {
             Token operator = tokens.get(current++);
             return new Expression.Unary(operator, unary());
@@ -131,7 +153,7 @@ public class LoxParser {
         }
     }
     
-    private Expression primary() {
+    private Expression primary() {      //primary        → NUMBER | STRING | TRUE | FALSE | NIL | "(" expression ")" 
         Token currToken = tokens.get(current++);
         switch (currToken.type) {
             case NUMBER:
@@ -147,7 +169,7 @@ public class LoxParser {
                 requireToken(TokenType.RIGHT_PAREN, "Unterminated grouping, expected ')'");
                 return new Expression.Grouping(expr);
             default:
-                return null;
+                throw error(tokens.get(current), "Expected an expression"); //If we fall through the tree and don't find an expression beginner token
         }
     }
 }
