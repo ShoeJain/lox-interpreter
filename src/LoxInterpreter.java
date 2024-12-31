@@ -112,6 +112,14 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
     }
 
     @Override
+    public Void visitAssignment(Expression.Assignment assignment) {
+        Object value = evaluateExpression(assignment.value);
+        env.define(assignment.varName.lexeme, value);
+
+        return null;
+    }
+
+    @Override
     public Object visitVariable(Expression.Variable variable) {
         return env.get(variable.varName);
     }
@@ -168,5 +176,4 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
 
         return null;
     }
-
 }

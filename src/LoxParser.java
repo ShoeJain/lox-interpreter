@@ -9,7 +9,9 @@ import java.util.List;
     printStmt        "print" expression ";" ;
     varDecl          "var" IDENTIFIER ("=" expression)? ";"
 
-    expression     → ternary (, tarnary)* ;
+    expression     → assignment ;
+    assignment       IDENTIFIER "=" assignment | comma ;    // assignment is self recursive to support syntax like a = b = c = some_expression;
+    comma            ternary (, ternary)* ;
     ternary        → equality (? equality : equality)* ;
     equality       → comparison ( ( "!=" | "==" ) comparison )* ;
     comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
@@ -123,7 +125,7 @@ public class LoxParser {
         return new Statement.Print(expr);
     }
 
-    private Statement.VarDecl varDeclStatement() {  //varDecl          "var" IDENTIFIER ("=" expression)? ";"
+    private Statement.VarDecl varDeclStatement() { //varDecl          "var" IDENTIFIER ("=" expression)? ";"
         current++; //Increment to skip the "var" that brought us here
         Token varToken = requireToken(TokenType.IDENTIFIER, "Missing identifier in variable declaration"); //Grab variable token
         Expression initializeValue = null;
@@ -135,8 +137,30 @@ public class LoxParser {
         return new Statement.VarDecl(varToken, initializeValue);
     }
 
-    //Is supposed to discard the left most expression
-    private Expression expression() { //expression     → ternary (, tarnary)* ;
+    
+    private Expression expression() { //expression     → assignment ;
+        return assignment();
+    }
+
+    private Expression assignment() { //assignment       IDENTIFIER "=" assignment | comma ;
+        Expression lValue = comma(); //evaluate everything to the left of the = first
+        
+        if (matchesOne(TokenType.EQUAL)) { //If the parser returns a Variable (which will auto consume the identifier)
+            //proceed with assignment logic
+            Token equals = tokens.get(current++);
+            if (lValue instanceof Expression.Variable) {
+                Expression value = assignment();
+
+                return new Expression.Assignment(((Expression.Variable) lValue).varName, value);
+            }
+
+            throw new LoxError.ParserError(equals, "Can't assign to a non-variable");
+        }
+        
+        return lValue;
+    }
+    
+    private Expression comma() {    //comma            ternary (, ternary)* ;
         Expression expr = ternary();
 
         while (matchesOne(TokenType.COMMA)) {

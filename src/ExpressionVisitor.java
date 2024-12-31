@@ -8,6 +8,8 @@ public interface ExpressionVisitor<T> {
     T visitLiteral(Expression.Literal literalExp);
 
     T visitVariable(Expression.Variable variable);
+
+    T visitAssignment(Expression.Assignment assignment);
 }
 
 

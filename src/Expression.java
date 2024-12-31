@@ -59,6 +59,21 @@ abstract public class Expression {
         }
     }
 
+    static class Assignment extends Expression {
+        final Token varName;
+        final Expression value;
+
+        Assignment(Token varName, Expression value) {
+            this.varName = varName;
+            this.value = value;
+        }
+
+        @Override
+        <T> T accept(ExpressionVisitor<T> visitor) {
+            return visitor.visitAssignment(this);
+        }
+    }
+
     static class Grouping extends Expression {
         final Expression expr;
 
