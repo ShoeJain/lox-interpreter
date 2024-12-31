@@ -112,15 +112,17 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
     }
 
     @Override
-    public Void visitAssignment(Expression.Assignment assignment) {
+    public Object visitAssignment(Expression.Assignment assignment) {
         Object value = evaluateExpression(assignment.value);
+        //System.out.println("Assigning value of \'" + assignment.varName.lexeme + "\' to = " + objectToString(value));
         env.define(assignment.varName.lexeme, value);
 
-        return null;
+        return value;
     }
 
     @Override
     public Object visitVariable(Expression.Variable variable) {
+        //System.out.println("Getting value of \'" + variable.varName.lexeme + "\' = " + objectToString(env.get(variable.varName)));
         return env.get(variable.varName);
     }
 

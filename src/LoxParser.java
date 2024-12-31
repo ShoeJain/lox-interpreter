@@ -160,7 +160,7 @@ public class LoxParser {
         return lValue;
     }
     
-    private Expression comma() {    //comma            ternary (, ternary)* ;
+    private Expression comma() {    //comma            ternary (, comma)* ????????;
         Expression expr = ternary();
 
         while (matchesOne(TokenType.COMMA)) {
