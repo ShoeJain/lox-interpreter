@@ -1,6 +1,6 @@
-public class ExpressionPrinter implements ExpressionVisitor<String> {
+public class ExpressionPrinter /*implements ExpressionVisitor<String>*/ {
 
-    String print(Expression expr) {
+    /*String print(Expression expr) {
         return expr.accept(this);
     }
     @Override
@@ -28,5 +28,5 @@ public class ExpressionPrinter implements ExpressionVisitor<String> {
     @Override
     public String visitVariable(Expression.Variable variable) {
         return "(" + variable.varName.lexeme + ")";
-    }
+    }*/
 }
