@@ -4,9 +4,10 @@ import java.util.List;
 //a==b?c==d:e==f ? true:false;
 /*
     program          statement* EOF ;
-    statement        exprStmt | printStmt ;
+    statement        exprStmt | printStmt | varDecl;
     exprStmt         expression ";" ;
     printStmt        "print" expression ";" ;
+    varDecl          "var" IDENTIFIER ("=" expression)? ";"
 
     expression     → ternary (, tarnary)* ;
     ternary        → equality (? equality : equality)* ;
@@ -16,7 +17,7 @@ import java.util.List;
     factor         → unary ( ( "/" | "*" ) unary )* ;
     unary          → ( "!" | "-" ) unary
                 | primary ;
-    primary        → NUMBER | STRING | "true" | "false" | "nil"
+    primary        → IDENTIFIER | NUMBER | STRING | "true" | "false" | "nil"
                 | "(" expression ")" ;
  */
 public class LoxParser {
@@ -58,10 +59,10 @@ public class LoxParser {
             return tokens.get(current).type == type;
     }
     
-    private void requireToken(TokenType type, String message) {
+    private Token requireToken(TokenType type, String message) {
         if (tokens.get(current).type == type) {
             current++;
-            return;
+            return tokens.get(current - 1);
         }
 
         throw new LoxError.ParserError(tokens.get(current), message);
@@ -93,11 +94,14 @@ public class LoxParser {
         }
     }
 
-    private Statement statement() {
+    private Statement statement() {     //statement        exprStmt | printStmt | varDecl;
         Statement stmt;
         switch (tokens.get(current).type) {
             case PRINT:
                 stmt = printStatement();
+                break;
+            case VAR:
+                stmt = varDeclStatement();
                 break;
             default:
                 stmt = expressionStatement();
@@ -106,17 +110,29 @@ public class LoxParser {
         return stmt;
     }
 
-    private Statement expressionStatement() {
+    private Statement expressionStatement() {   //exprStmt         expression ";" ;
         Expression expr = expression();
         requireToken(TokenType.SEMICOLON, "Missing ';'");
         return new Statement.ExpressionStmt(expr);
     }
 
-    private Statement.Print printStatement() {
+    private Statement.Print printStatement() {  //printStmt        "print" expression ";" ;
         current++; //Increment to skip the "print" that brought us here
         Expression expr = expression();
         requireToken(TokenType.SEMICOLON, "Missing ';'");
         return new Statement.Print(expr);
+    }
+
+    private Statement.VarDecl varDeclStatement() {  //varDecl          "var" IDENTIFIER ("=" expression)? ";"
+        current++; //Increment to skip the "var" that brought us here
+        Token varToken = requireToken(TokenType.IDENTIFIER, "Missing identifier in variable declaration"); //Grab variable token
+        Expression initializeValue = null;
+        if (matchesOne(TokenType.EQUAL)) {
+            current++;
+            initializeValue = expression();
+        }
+        requireToken(TokenType.SEMICOLON, "Missing ';'");
+        return new Statement.VarDecl(varToken, initializeValue);
     }
 
     //Is supposed to discard the left most expression
@@ -222,6 +238,8 @@ public class LoxParser {
                 Expression expr = expression();
                 requireToken(TokenType.RIGHT_PAREN, "Unterminated grouping, expected ')'");
                 return new Expression.Grouping(expr);
+            case IDENTIFIER:
+                return new Expression.Variable(currToken);
             default:
                 throw new LoxError.ParserError(tokens.get(current), "Expected an expression"); //If we fall through the tree and don't find an expression beginner token
         }

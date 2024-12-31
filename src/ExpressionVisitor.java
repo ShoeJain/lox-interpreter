@@ -6,6 +6,8 @@ public interface ExpressionVisitor<T> {
     T visitGrouping(Expression.Grouping groupingExp);
 
     T visitLiteral(Expression.Literal literalExp);
+
+    T visitVariable(Expression.Variable variable);
 }
 
 

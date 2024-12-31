@@ -46,6 +46,19 @@ abstract public class Expression {
         }
     }
 
+    static class Variable extends Expression {
+        final Token varName;
+
+        Variable(Token varName) {
+            this.varName = varName;
+        }
+
+        @Override
+        <T> T accept(ExpressionVisitor<T> visitor) {
+            return visitor.visitVariable(this);
+        }
+    }
+
     static class Grouping extends Expression {
         final Expression expr;
 

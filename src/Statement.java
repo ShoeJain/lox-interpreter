@@ -14,9 +14,9 @@ abstract class Statement {
         }
     }
 
-    static class Print extends Statement{
+    static class Print extends Statement {
         final Expression expr;
-        
+
         Print(Expression expr) {
             this.expr = expr;
         }
@@ -24,6 +24,21 @@ abstract class Statement {
         @Override
         <T> T accept(StatementVisitor<T> visitor) {
             return visitor.visitPrintStatement(this);
+        }
+    }
+    
+    static class VarDecl extends Statement {
+        final Token varName;
+        final Expression expr;
+        
+        VarDecl(Token varName, Expression expr) {
+            this.varName = varName;
+            this.expr = expr;
+        }
+
+        @Override
+        <T> T accept(StatementVisitor<T> visitor) {
+            return visitor.visitVarDeclStatement(this);
         }
     }
 }

@@ -3,7 +3,8 @@ import java.util.List;
 
 public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisitor<Void> {
 
-    final static String divideByZero = "Imagine that you have zero cookies and you split them evenly among zero friends. How many cookies does each person get? See? It doesn't make sense. And Cookie Monster is sad that there are no cookies, and you are sad that you have no friends.";
+    final static LoxEnvironment env = new LoxEnvironment();
+    final String divideByZero = "Imagine that you have zero cookies and you split them evenly among zero friends. How many cookies does each person get? See? It doesn't make sense. And Cookie Monster is sad that there are no cookies, and you are sad that you have no friends.";
 
     public void interpret(List<Statement> program) {
         try {
@@ -111,6 +112,11 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
     }
 
     @Override
+    public Object visitVariable(Expression.Variable variable) {
+        return env.get(variable.varName);
+    }
+
+    @Override
     public Object visitGrouping(Expression.Grouping groupingExp) {
         return evaluateExpression(groupingExp.expr);
     }
@@ -150,6 +156,16 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
     public Void visitPrintStatement(Statement.Print statement) {
         Object result = evaluateExpression(statement.expr);
         System.out.println(objectToString(result));
+        return null;
+    }
+
+    @Override
+    public Void visitVarDeclStatement(Statement.VarDecl varDecl) {
+        if (varDecl.expr == null) { //if is just declaration and not initialization as well;
+            env.define(varDecl.varName.lexeme, null);
+        }
+        else env.define(varDecl.varName.lexeme, evaluateExpression(varDecl.expr));
+
         return null;
     }
 

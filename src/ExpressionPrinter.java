@@ -23,5 +23,10 @@ public class ExpressionPrinter implements ExpressionVisitor<String> {
         if (literalExp.value == null)
             return "nil";
         return literalExp.value.toString();
+
+    }
+    @Override
+    public String visitVariable(Expression.Variable variable) {
+        return "(" + variable.varName.lexeme + ")";
     }
 }
