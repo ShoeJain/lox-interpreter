@@ -1,17 +1,17 @@
 import java.util.ArrayList;
 import java.util.List;
 
-//a==b?c==d:e==f ? true:false;
 /*
-    program          statement* EOF ;
-    statement        exprStmt | printStmt | varDecl;
-    exprStmt         expression ";" ;
-    printStmt        "print" expression ";" ;
-    varDecl          "var" IDENTIFIER ("=" expression)? ";"
+    program        → statementBlock* EOF ;
+    statementBlock → "{" statementBlock+ "}" | statement ;  //Note: Current auto errors if empty block
+    statement      → exprStmt | printStmt | varDecl;
+    exprStmt       → expression ";" ;
+    printStmt      → "print" expression ";" ;
+    varDecl        → "var" IDENTIFIER ("=" expression)? ";"
 
     expression     → assignment ;
-    assignment       IDENTIFIER "=" assignment | comma ;    // assignment is self recursive to support syntax like a = b = c = some_expression;
-    comma            ternary (, ternary)* ;
+    assignment     → IDENTIFIER "=" assignment | comma ;    // assignment is self recursive to support syntax like a = b = c = some_expression;
+    comma          → ternary (, ternary)* ;
     ternary        → equality (? equality : equality)* ;
     equality       → comparison ( ( "!=" | "==" ) comparison )* ;
     comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
@@ -34,7 +34,7 @@ public class LoxParser {
         List<Statement> statementList = new ArrayList<>();
         try {
             while (!isAtEnd()) {
-                statementList.add(statement());
+                statementList.add(statementBlock());
             }
         } catch (LoxError.ParserError err) {
             LoxError.printError(LoxError.Module.PARSER, err.token.lineNumber, err.getMessage());
@@ -60,7 +60,7 @@ public class LoxParser {
         else
             return tokens.get(current).type == type;
     }
-    
+
     private Token requireToken(TokenType type, String message) {
         if (tokens.get(current).type == type) {
             current++;
@@ -96,7 +96,21 @@ public class LoxParser {
         }
     }
 
-    private Statement statement() {     //statement        exprStmt | printStmt | varDecl;
+    private Statement statementBlock() {    //statementBlock → "{" statementBlock+ "}" | statement ;
+        if (matchesOne(TokenType.LEFT_BRACE)) {
+            Token openingBrace = tokens.get(current++);   //Saving this for easy debug
+            List<Statement> statements = new ArrayList<>();
+            while (!matchesOne(TokenType.RIGHT_BRACE) && !isAtEnd()) {
+                statements.add(statementBlock());
+            }
+            requireToken(TokenType.RIGHT_BRACE, "Unterminated block - block start at ln " + openingBrace.lineNumber);
+            return new Statement.Block(statements);
+        }
+
+        return statement();
+    }
+
+    private Statement statement() {         //statement        exprStmt | printStmt | varDecl;
         Statement stmt;
         switch (tokens.get(current).type) {
             case PRINT:
@@ -112,13 +126,13 @@ public class LoxParser {
         return stmt;
     }
 
-    private Statement expressionStatement() {   //exprStmt         expression ";" ;
+    private Statement expressionStatement() { //exprStmt         expression ";" ;
         Expression expr = expression();
         requireToken(TokenType.SEMICOLON, "Missing ';'");
         return new Statement.ExpressionStmt(expr);
     }
 
-    private Statement.Print printStatement() {  //printStmt        "print" expression ";" ;
+    private Statement.Print printStatement() { //printStmt        "print" expression ";" ;
         current++; //Increment to skip the "print" that brought us here
         Expression expr = expression();
         requireToken(TokenType.SEMICOLON, "Missing ';'");
@@ -137,14 +151,13 @@ public class LoxParser {
         return new Statement.VarDecl(varToken, initializeValue);
     }
 
-    
     private Expression expression() { //expression     → assignment ;
         return assignment();
     }
 
     private Expression assignment() { //assignment       IDENTIFIER "=" assignment | comma ;
         Expression lValue = comma(); //evaluate everything to the left of the = first
-        
+
         if (matchesOne(TokenType.EQUAL)) { //If the parser returns a Variable (which will auto consume the identifier)
             //proceed with assignment logic
             Token equals = tokens.get(current++);
@@ -156,11 +169,11 @@ public class LoxParser {
 
             throw new LoxError.ParserError(equals, "Can't assign to a non-variable");
         }
-        
+
         return lValue;
     }
-    
-    private Expression comma() {    //comma            ternary (, comma)* ????????;
+
+    private Expression comma() { //comma            ternary (, comma)* ????????;
         Expression expr = ternary();
 
         while (matchesOne(TokenType.COMMA)) {
@@ -170,8 +183,8 @@ public class LoxParser {
 
         return expr;
     }
-    
-    private Expression ternary() {      //ternary        → equality (? equality : equality)* ;
+
+    private Expression ternary() { //ternary        → equality (? equality : equality)* ;
         Expression expr = equality();
 
         while (matchesOne(TokenType.QUESTION)) {
@@ -187,7 +200,7 @@ public class LoxParser {
         return expr;
     }
 
-    private Expression equality() {     //equality       → comparison ( ( "!=" | "==" ) comparison )* ;
+    private Expression equality() { //equality       → comparison ( ( "!=" | "==" ) comparison )* ;
         Expression expr = comparision();
 
         while (matchesOne(TokenType.NOT_EQUAL, TokenType.EQUAL_EQUAL)) {
@@ -199,7 +212,7 @@ public class LoxParser {
         return expr;
     }
 
-    private Expression comparision() {  //comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+    private Expression comparision() { //comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
         Expression expr = term();
 
         while (matchesOne(TokenType.GREATER, TokenType.LESSER, TokenType.GREATER_EQUAL, TokenType.LESSER_EQUAL)) {
@@ -211,8 +224,8 @@ public class LoxParser {
 
         return expr;
     }
-    
-    private Expression term() {         //term           → factor ( ( "-" | "+" ) factor )* ;
+
+    private Expression term() { //term           → factor ( ( "-" | "+" ) factor )* ;
         Expression expr = factor();
 
         while (matchesOne(TokenType.PLUS, TokenType.MINUS)) {
@@ -225,7 +238,7 @@ public class LoxParser {
         return expr;
     }
 
-    private Expression factor() {       //factor         → unary ( ( "/" | "*" ) unary )* ;
+    private Expression factor() { //factor         → unary ( ( "/" | "*" ) unary )* ;
         Expression expr = unary();
 
         while (matchesOne(TokenType.SLASH, TokenType.STAR)) {
@@ -238,7 +251,7 @@ public class LoxParser {
         return expr;
     }
 
-    private Expression unary() {        //unary          → (( "!" | "-" ) unary) | primary;
+    private Expression unary() { //unary          → (( "!" | "-" ) unary) | primary;
         if (matchesOne(TokenType.NOT, TokenType.MINUS)) {
             Token operator = tokens.get(current++);
             return new Expression.Unary(operator, unary());
@@ -246,13 +259,13 @@ public class LoxParser {
             return primary();
         }
     }
-    
-    private Expression primary() {      //primary        → NUMBER | STRING | TRUE | FALSE | NIL | "(" expression ")" 
+
+    private Expression primary() { //primary        → NUMBER | STRING | TRUE | FALSE | NIL | "(" expression ")" 
         Token currToken = tokens.get(current++);
         switch (currToken.type) {
             case NUMBER:
             case STRING:
-            case NIL:   //for NIL, the literal will already be null
+            case NIL: //for NIL, the literal will already be null
                 return new Expression.Literal(currToken.literal);
             case TRUE:
                 return new Expression.Literal(true);

@@ -1,3 +1,6 @@
+import java.util.List;
+import java.util.ArrayList;
+
 abstract class Statement {
     abstract <T> T accept(StatementVisitor<T> visitor);
 
@@ -30,7 +33,7 @@ abstract class Statement {
     static class VarDecl extends Statement {
         final Token varName;
         final Expression expr;
-        
+
         VarDecl(Token varName, Expression expr) {
             this.varName = varName;
             this.expr = expr;
@@ -39,6 +42,19 @@ abstract class Statement {
         @Override
         <T> T accept(StatementVisitor<T> visitor) {
             return visitor.visitVarDeclStatement(this);
+        }
+    }
+    
+    static class Block extends Statement {
+        final List<Statement> statements;
+        
+        Block(List<Statement> stmts) {
+            this.statements = stmts;
+        }
+
+        @Override
+        <T> T accept(StatementVisitor<T> visitor) {
+            return visitor.visitBlockStatement(this);
         }
     }
 }

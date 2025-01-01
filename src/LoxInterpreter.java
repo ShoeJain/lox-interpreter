@@ -1,9 +1,12 @@
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.security.auth.login.LoginException;
+
 public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisitor<Void> {
 
-    final static LoxEnvironment env = new LoxEnvironment();
+    final static LoxEnvironment globalScope = new LoxEnvironment(null);
+    static LoxEnvironment currentScope = globalScope;       //Typically the innermost scope block - LoxEnvironment is capable of searching up enclosing scopes (see get())
     final String divideByZero = "Imagine that you have zero cookies and you split them evenly among zero friends. How many cookies does each person get? See? It doesn't make sense. And Cookie Monster is sad that there are no cookies, and you are sad that you have no friends.";
 
     public void interpret(List<Statement> program) {
@@ -21,6 +24,10 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
 
     private Object evaluateExpression(Expression expr) {
         return expr.accept(this);
+    }
+
+    private Object evaluateStatement(Statement stmt) {
+        return stmt.accept(this);
     }
 
     private String objectToString(Object obj) {
@@ -115,15 +122,15 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
     public Object visitAssignment(Expression.Assignment assignment) {
         Object value = evaluateExpression(assignment.value);
         //System.out.println("Assigning value of \'" + assignment.varName.lexeme + "\' to = " + objectToString(value));
-        env.define(assignment.varName.lexeme, value);
+        currentScope.assign(assignment.varName, value);
 
-        return value;
+        return value;   //This may have issues in the future... Maybe this should return the Variable type instead?
     }
 
     @Override
     public Object visitVariable(Expression.Variable variable) {
         //System.out.println("Getting value of \'" + variable.varName.lexeme + "\' = " + objectToString(env.get(variable.varName)));
-        return env.get(variable.varName);
+        return currentScope.get(variable.varName);
     }
 
     @Override
@@ -172,10 +179,22 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
     @Override
     public Void visitVarDeclStatement(Statement.VarDecl varDecl) {
         if (varDecl.expr == null) { //if is just declaration and not initialization as well;
-            env.define(varDecl.varName.lexeme, null);
+            currentScope.define(varDecl.varName, null);
         }
-        else env.define(varDecl.varName.lexeme, evaluateExpression(varDecl.expr));
+        else currentScope.define(varDecl.varName, evaluateExpression(varDecl.expr));
 
+        return null;
+    }
+
+    @Override
+    public Void visitBlockStatement(Statement.Block block) {
+        LoxEnvironment enclosingScope = this.currentScope;
+        this.currentScope = new LoxEnvironment(enclosingScope);
+
+        for (Statement stmt : block.statements)
+            evaluateStatement(stmt);
+
+        this.currentScope = enclosingScope; //Should auto-free block scop
         return null;
     }
 }
