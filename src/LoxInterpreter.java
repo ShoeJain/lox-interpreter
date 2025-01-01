@@ -3,7 +3,7 @@ import java.util.List;
 
 import javax.security.auth.login.LoginException;
 
-public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisitor<Void> {
+public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisitor<Object> {
 
     final static LoxEnvironment globalScope = new LoxEnvironment(null);
     static LoxEnvironment currentScope = globalScope;       //Typically the innermost scope block - LoxEnvironment is capable of searching up enclosing scopes (see get())
@@ -27,7 +27,10 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
     }
 
     private Object evaluateStatement(Statement stmt) {
-        return stmt.accept(this);
+        Object value = stmt.accept(this);
+        if (Main.isInteractive) //TODO: Why does this not work?
+            System.out.println(objectToString(value));
+        return value;
     }
 
     private String objectToString(Object obj) {
@@ -164,9 +167,9 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
     }
 
     @Override
-    public Void visitExpressionStatement(Statement.ExpressionStmt statement) {
-        evaluateExpression(statement.expr);
-        return null;
+    public Object visitExpressionStatement(Statement.ExpressionStmt statement) {
+        Object value = evaluateExpression(statement.expr);
+        return value;
     }
 
     @Override
@@ -188,13 +191,13 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
 
     @Override
     public Void visitBlockStatement(Statement.Block block) {
-        LoxEnvironment enclosingScope = this.currentScope;
-        this.currentScope = new LoxEnvironment(enclosingScope);
+        LoxEnvironment enclosingScope = currentScope;
+        currentScope = new LoxEnvironment(enclosingScope);
 
         for (Statement stmt : block.statements)
             evaluateStatement(stmt);
 
-        this.currentScope = enclosingScope; //Should auto-free block scop
+        currentScope = enclosingScope; //Should auto-free block scop
         return null;
     }
 }

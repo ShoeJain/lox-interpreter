@@ -11,6 +11,8 @@ import java.util.List;
  * Add support for interactive session
  */
 public class Main {
+    public static boolean isInteractive = false;
+
     private static LoxInterpreter interp = new LoxInterpreter();
 
     public static void main(String[] args) {  
@@ -34,6 +36,7 @@ public class Main {
     }
 
     public static void interactivePrompt() {
+        isInteractive = true;
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         try {
             while(true) {
@@ -57,7 +60,6 @@ public class Main {
             //Parse token list output by Scanner
             LoxParser parser = new LoxParser(tokenList);
             List<Statement> statements = parser.parseProgram(); //TODO: Should this be the place to pass in tokenList?
-            //System.out.println(new ExpressionPrinter().print(singleExpression));
 
             interp.interpret(statements);
         } else {
