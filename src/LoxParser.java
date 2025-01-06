@@ -3,8 +3,9 @@ import java.util.List;
 
 /*
     program        → statementBlock* EOF ;
-    statementBlock → "{" statementBlock+ "}" | statement ;  //Note: Current auto errors if empty block
-    statement      → exprStmt | printStmt | varDecl;
+    statementBlock → "{" statementBlock+ "}" | statement ;  //Note: Currently auto errors if empty block
+    statement      → exprStmt | printStmt | varDecl | ifStmt ;
+    ifStmt         → "if" "(" expression ")" statementBlock | "else" statementBlock ;
     exprStmt       → expression ";" ;
     printStmt      → "print" expression ";" ;
     varDecl        → "var" IDENTIFIER ("=" expression)? ";"
@@ -119,6 +120,9 @@ public class LoxParser {
             case VAR:
                 stmt = varDeclStatement();
                 break;
+            case IF:
+                stmt = ifStatement();
+                break;
             default:
                 stmt = expressionStatement();
                 break;
@@ -149,6 +153,21 @@ public class LoxParser {
         }
         requireToken(TokenType.SEMICOLON, "Missing ';'");
         return new Statement.VarDecl(varToken, initializeValue);
+    }
+
+    private Statement.IfSequence ifStatement() {   //ifStmt         → "if" "(" expression ")" statementBlock  ("else" statementBlock)? ;
+        current++;
+        requireToken(TokenType.LEFT_PAREN, "If statement missing condition opening parenthesis");
+        Expression conditional = expression();
+        requireToken(TokenType.RIGHT_PAREN, "If statement missing condition closing parenthesis");
+        Statement thenStmt = statementBlock();
+        Statement elseStmt = null;
+        if (matchesOne(TokenType.ELSE)) {
+            current++;
+            elseStmt = statementBlock();
+        }
+
+        return new Statement.IfSequence(conditional, thenStmt, elseStmt);
     }
 
     private Expression expression() { //expression     → assignment ;

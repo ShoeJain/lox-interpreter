@@ -47,7 +47,7 @@ abstract class Statement {
     
     static class Block extends Statement {
         final List<Statement> statements;
-        
+
         Block(List<Statement> stmts) {
             this.statements = stmts;
         }
@@ -55,6 +55,23 @@ abstract class Statement {
         @Override
         <T> T accept(StatementVisitor<T> visitor) {
             return visitor.visitBlockStatement(this);
+        }
+    }
+    
+    static class IfSequence extends Statement {
+        final Expression ifCondition;
+        final Statement thenStatements;
+        final Statement elseStatements;
+        
+        IfSequence(Expression ifCondition, Statement thenStatements, Statement elseStatements) {
+            this.ifCondition = ifCondition;
+            this.thenStatements = thenStatements;
+            this.elseStatements = elseStatements;
+        }
+
+        @Override
+        <T> T accept(StatementVisitor<T> visitor) {
+            return visitor.visitIfStatement(this);
         }
     }
 }

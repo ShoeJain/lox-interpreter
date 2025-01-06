@@ -6,4 +6,6 @@ public interface StatementVisitor<T> {
     T visitVarDeclStatement(Statement.VarDecl varDecl);
 
     T visitBlockStatement(Statement.Block block);
+
+    T visitIfStatement(Statement.IfSequence ifSequence);
 }

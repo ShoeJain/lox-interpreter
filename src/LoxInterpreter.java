@@ -5,6 +5,8 @@ import javax.security.auth.login.LoginException;
 
 public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisitor<Object> {
 
+    // Expressions MUST always have some Object return value, and statements should probably always be Void return type...
+
     final static LoxEnvironment globalScope = new LoxEnvironment(null);
     static LoxEnvironment currentScope = globalScope;       //Typically the innermost scope block - LoxEnvironment is capable of searching up enclosing scopes (see get())
     final String divideByZero = "Imagine that you have zero cookies and you split them evenly among zero friends. How many cookies does each person get? See? It doesn't make sense. And Cookie Monster is sad that there are no cookies, and you are sad that you have no friends.";
@@ -146,26 +148,6 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
         return literalExp.value;
     }
 
-    private boolean isTruthy(Object expression) {
-        if (expression == null)
-            return false;
-        if (expression instanceof Boolean)
-            return (boolean) expression;
-        return true;
-    }
-
-    private void checkUnaryNumberOperand(Token operator, Object operand) {
-        if (operand instanceof Double)
-            return;
-        throw new LoxError.RuntimeError(operator, "Invalid operand type for operation");
-    }
-
-    private void checkBinaryNumberOperand(Token operator, Object operand1, Object operand2) {
-        if (operand1 instanceof Double && operand2 instanceof Double)
-            return;
-        throw new LoxError.RuntimeError(operator, "Invalid operand types for operation");
-    }
-
     @Override
     public Object visitExpressionStatement(Statement.ExpressionStmt statement) {
         Object value = evaluateExpression(statement.expr);
@@ -199,5 +181,37 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
 
         currentScope = enclosingScope; //Should auto-free block scop
         return null;
+    }
+
+    @Override
+    public Void visitIfStatement(Statement.IfSequence ifSequence) {
+        if (isTruthy(evaluateExpression(ifSequence.ifCondition)))
+            evaluateStatement(ifSequence.thenStatements);
+        else if (ifSequence.elseStatements != null) 
+            evaluateStatement(ifSequence.elseStatements);
+
+        return null;
+    }
+
+    private boolean isTruthy(Object expression) {
+        if (expression == null)
+            return false;
+        if (expression instanceof Boolean)
+            return (boolean) expression;
+        if (expression instanceof Double && (double) expression == 0f)
+            return false;
+        return true;
+    }
+
+    private void checkUnaryNumberOperand(Token operator, Object operand) {
+        if (operand instanceof Double)
+            return;
+        throw new LoxError.RuntimeError(operator, "Invalid operand type for operation");
+    }
+
+    private void checkBinaryNumberOperand(Token operator, Object operand1, Object operand2) {
+        if (operand1 instanceof Double && operand2 instanceof Double)
+            return;
+        throw new LoxError.RuntimeError(operator, "Invalid operand types for operation");
     }
 }
