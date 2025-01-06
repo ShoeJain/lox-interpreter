@@ -5,7 +5,7 @@ import java.util.List;
     program        → statementBlock* EOF ;
     statementBlock → "{" statementBlock+ "}" | statement ;  //Note: Currently auto errors if empty block
     statement      → exprStmt | printStmt | varDecl | ifStmt ;
-    ifStmt         → "if" "(" expression ")" statementBlock | "else" statementBlock ;
+    ifStmt         → "if" "(" expression ")" statementBlock  ("else" statementBlock)? ;
     exprStmt       → expression ";" ;
     printStmt      → "print" expression ";" ;
     varDecl        → "var" IDENTIFIER ("=" expression)? ";"
@@ -13,7 +13,9 @@ import java.util.List;
     expression     → assignment ;
     assignment     → IDENTIFIER "=" assignment | comma ;    // assignment is self recursive to support syntax like a = b = c = some_expression;
     comma          → ternary (, ternary)* ;
-    ternary        → equality (? equality : equality)* ;
+    ternary        → logic_or (? equality : logic_or)* ;
+    logic_or       → logic_and ("or" logic_and)* ;
+    logic_and      → equality ("and" equality)*;
     equality       → comparison ( ( "!=" | "==" ) comparison )* ;
     comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
     term           → factor ( ( "-" | "+" ) factor )* ;
@@ -24,6 +26,9 @@ import java.util.List;
                 | "(" expression ")" ;
  */
 public class LoxParser {
+    //Note - statement (in the syntactic/semantic sense) cannot contain one another - but statementBlocks can
+    //Expressions can contain one another (semantically, evident from the production rules above)
+
     private final List<Token> tokens;
     private int current = 0;
 
@@ -203,19 +208,43 @@ public class LoxParser {
         return expr;
     }
 
-    private Expression ternary() { //ternary        → equality (? equality : equality)* ;
-        Expression expr = equality();
+    private Expression ternary() { //ternary        → logic_or (? logic_or : logic_or)* ;
+        Expression expr = logic_or();
 
-        while (matchesOne(TokenType.QUESTION)) {
+        while (matchesOne(TokenType.QUESTION)) {    //Test this with interp functionality
             Token question = tokens.get(current++);
-            Expression trueCase = equality();
+            Expression trueCase = logic_or();
             requireToken(TokenType.COLON, "Missing ':' in ternary condition");
             Token colon = tokens.get(current - 1);
-            Expression falseCase = equality();
+            Expression falseCase = logic_or();
             Expression decisions = new Expression.Binary(trueCase, colon, falseCase);
             expr = new Expression.Binary(expr, question, decisions);
         }
 
+        return expr;
+    }
+
+    private Expression logic_or() {     //logic_or       → logic_and ("or" logic_and)* ;
+        Expression expr = logic_and();
+
+        while (matchesOne(TokenType.OR)) {
+            Token operator = tokens.get(current++);
+            Expression right = logic_and();
+
+            expr = new Expression.Binary(expr, operator, right);
+        }
+        return expr;
+    }
+
+    private Expression logic_and() {    //logic_and      → equality ("and" equality)*;
+        Expression expr = equality();
+
+        while (matchesOne(TokenType.AND)) {
+            Token operator = tokens.get(current++);
+            Expression right = equality();
+
+            expr = new Expression.Binary(expr, operator, right);
+        }
         return expr;
     }
 

@@ -44,9 +44,21 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
     @Override
     public Object visitBinary(Expression.Binary binaryExp) {
         Object op1 = evaluateExpression(binaryExp.left);
+        if (binaryExp.operator.type == TokenType.OR) {
+            if (isTruthy(op1)) //In a chain of "or"s, we want to short circuit and return when we hit the first Truthy value
+                return op1;
+        }
+        else if (binaryExp.operator.type == TokenType.AND) {
+            if (!isTruthy(op1)) //In a chain of "and"s, we want to short circuit and return when we hit the first !Truthy value
+                return op1;
+        }
+
         Object op2 = evaluateExpression(binaryExp.right);
 
         switch (binaryExp.operator.type) {
+            case OR:
+            case AND:
+                return op2;     //This denotes the end of a chain of ORs/ANDs
             case PLUS:
                 if (op1 instanceof Double && op2 instanceof Double)
                     return (double) op1 + (double) op2;
