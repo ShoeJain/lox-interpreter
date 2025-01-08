@@ -1,8 +1,7 @@
-var a = 0;
-var b = 1;
-if(a and b) print "and";
-else if (a or b) print "or";
-else print "both false";
+var a = 1;
+var b = 15;
+var c = -1;
 
+var d = a < b ? (a < c ? a : b) : c;
 
-print "end";
+print d;

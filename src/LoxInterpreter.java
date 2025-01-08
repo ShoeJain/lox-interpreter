@@ -43,12 +43,14 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
 
     @Override
     public Object visitBinary(Expression.Binary binaryExp) {
+        if (binaryExp.operator.type == TokenType.QUESTION)
+            return handleTernary(binaryExp);
+
         Object op1 = evaluateExpression(binaryExp.left);
         if (binaryExp.operator.type == TokenType.OR) {
             if (isTruthy(op1)) //In a chain of "or"s, we want to short circuit and return when we hit the first Truthy value
                 return op1;
-        }
-        else if (binaryExp.operator.type == TokenType.AND) {
+        } else if (binaryExp.operator.type == TokenType.AND) {
             if (!isTruthy(op1)) //In a chain of "and"s, we want to short circuit and return when we hit the first !Truthy value
                 return op1;
         }
@@ -58,7 +60,7 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
         switch (binaryExp.operator.type) {
             case OR:
             case AND:
-                return op2;     //This denotes the end of a chain of ORs/ANDs
+                return op2; //This denotes the end of a chain of ORs/ANDs
             case PLUS:
                 if (op1 instanceof Double && op2 instanceof Double)
                     return (double) op1 + (double) op2;
@@ -70,7 +72,8 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
                 return (double) op1 - (double) op2;
             case SLASH:
                 checkBinaryNumberOperand(binaryExp.operator, op1, op2);
-                if((double) op2 == 0) throw new LoxError.RuntimeError(binaryExp.operator, divideByZero);
+                if ((double) op2 == 0)
+                    throw new LoxError.RuntimeError(binaryExp.operator, divideByZero);
                 return (double) op1 / (double) op2;
             case STAR:
                 checkBinaryNumberOperand(binaryExp.operator, op1, op2);
@@ -115,9 +118,18 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
                 if (op1 instanceof String && op2 instanceof String)
                     return ((String) op1).compareTo((String) op2) < 0 ? true : false;
                 throw new LoxError.RuntimeError(binaryExp.operator, "Operands must both be numbers or strings");
+            case QUESTION:
+
             default:
                 return null;
         }
+    }
+    
+    private Object handleTernary(Expression.Binary ternaryExp) {
+        //We can safely assume ternaryExp.right can be cast to Expression.Binary, as the Parser ensures this (see LoxParser.ternary())
+        if (isTruthy(evaluateExpression(ternaryExp.left))) 
+            return evaluateExpression(((Expression.Binary) ternaryExp.right).left);
+        return evaluateExpression(((Expression.Binary) ternaryExp.right).right);
     }
 
     @Override
