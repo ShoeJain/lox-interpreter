@@ -236,4 +236,12 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
             return;
         throw new LoxError.RuntimeError(operator, "Invalid operand types for operation");
     }
+
+    public Object visitComma(Expression.Comma comma) {
+        Object finalValue = null;   //We only want to return the result of the right-most expression
+        for (Expression expr : comma.expressions)
+            finalValue = evaluateExpression(expr);
+
+        return finalValue;
+    }
 }

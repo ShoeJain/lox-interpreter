@@ -12,7 +12,7 @@ import java.util.List;
     varDecl        → "var" IDENTIFIER ("=" expression)? ";"
 
     expression     → comma | assignment ;
-    assignment     → IDENTIFIER "=" expression;    // assignment is self recursive to support syntax like a = b = c = some_expression;
+    assignment     → IDENTIFIER "=" expression;   
     comma          → ternary (, ternary)* ;
     ternary        → logic_or (? equality : logic_or)* ;
     logic_or       → logic_and ("or" logic_and)* ;
@@ -205,14 +205,17 @@ public class LoxParser {
     }
 
     private Expression comma() { //comma          → ternary (, ternary)* ;
-        Expression expr = ternary();
+        List<Expression> listExpr = new ArrayList<>();
+        listExpr.add(ternary());
 
         while (matchesOne(TokenType.COMMA)) {
             current++;
-            expr = ternary();
-        }
-
-        return expr;
+            listExpr.add(ternary());
+        } 
+        if (listExpr.size() == 1)   //If there's no comma delimited list of expressions
+            return listExpr.get(0);
+        else
+        return new Expression.Comma(listExpr);
     }
 
     private Expression ternary() { //ternary        → logic_or (? logic_or : logic_or)* ;

@@ -89,4 +89,17 @@ abstract public class Expression {
             return visitor.visitGrouping(this);
         }
     }
+
+    static class Comma extends Expression {
+        final List<Expression> expressions;
+
+        Comma(List<Expression> expressions) {
+            this.expressions = expressions;
+        }
+
+        @Override
+        <T> T accept(ExpressionVisitor<T> visitor) {
+            return visitor.visitComma(this);
+        }
+    }
 }

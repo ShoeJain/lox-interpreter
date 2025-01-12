@@ -10,6 +10,8 @@ public interface ExpressionVisitor<T> {
     T visitVariable(Expression.Variable variable);
 
     T visitAssignment(Expression.Assignment assignment);
+
+    T visitComma(Expression.Comma comma);
 }
 
 
