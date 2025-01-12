@@ -1,8 +1,8 @@
 # Lox Interpreter
 
-An interpreter written in Java for modified-Lox (the programming language specified in Robert Nystrom's [Crafting Interpreters](https://craftinginterpreters.com/) book. I followed the book for a handful of chapters before branching out and making my own grammar/implementation.
+An interpreter written in Java for modified-Lox (the programming language specified in Robert Nystrom's [Crafting Interpreters](https://craftinginterpreters.com/) book. I followed the book for a handful of chapters before branching out and making my own additions to the grammar/implementation.
 
-I made this because I took a Compilers class at university and walked away feeling like I didn't really gain an intuitive understanding of how compilers/interpreters are made, and what goes into crafting a programming or domain specific language. I would highly recommend the [Crafting Interpreters](https://craftinginterpreters.com/) book to anyone who wants to learn the same topic.
+I made this because I took a Compilers class at university and walked away feeling like I didn't really gain an intuitive understanding of some aspects of compiler/interpreter design, and the practical considerations to make when _designing_ the semantics of a language and defining compiler behavior. I would highly recommend the [Crafting Interpreters](https://craftinginterpreters.com/) book to anyone who's interested in this.
 
 ## Modified Lox
 
