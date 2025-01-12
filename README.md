@@ -11,14 +11,15 @@ This interpreter implements the following production rules for the syntax:
 ```python
     program        → statementBlock* EOF ;
     statementBlock → "{" statementBlock+ "}" | statement ;  //Note: Currently auto errors if empty block
-    statement      → exprStmt | printStmt | varDecl | ifStmt ;
+    statement      → assignStmt | printStmt | varDecl | ifStmt ;
     ifStmt         → "if" "(" expression ")" statementBlock  ("else" statementBlock)? ;
     exprStmt       → expression ";" ;
+    assignStmt     → assignment ";" ;
     printStmt      → "print" expression ";" ;
     varDecl        → "var" IDENTIFIER ("=" expression)? ";"
 
-    expression     → assignment ;
-    assignment     → IDENTIFIER "=" assignment | comma ;    // assignment is self recursive to support syntax like a = b = c = some_expression;
+    expression     → comma | assignment ;
+    assignment     → IDENTIFIER "=" expression;   
     comma          → ternary (, ternary)* ;
     ternary        → logic_or (? equality : logic_or)* ;
     logic_or       → logic_and ("or" logic_and)* ;
@@ -32,6 +33,8 @@ This interpreter implements the following production rules for the syntax:
     primary        → IDENTIFIER | NUMBER | STRING | "true" | "false" | "nil"
                 | "(" expression ")" ;
 ```
+
+Almost everything works as you'd normally expect it to. Functions are considered first class citizens, and my version also doesn't allow you to use undefined variables - the original Lox was written to partly be usable via an interactive prompt, which I'm not interested in doing.
 
 ## Build
 Use the compile.sh script to build the interpreter
