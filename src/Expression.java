@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 abstract public class Expression {
     abstract <T> T accept(ExpressionVisitor<T> visitor);
 

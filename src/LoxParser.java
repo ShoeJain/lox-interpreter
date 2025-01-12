@@ -4,14 +4,15 @@ import java.util.List;
 /*
     program        → statementBlock* EOF ;
     statementBlock → "{" statementBlock+ "}" | statement ;  //Note: Currently auto errors if empty block
-    statement      → exprStmt | printStmt | varDecl | ifStmt ;
+    statement      → assignStmt | printStmt | varDecl | ifStmt ;
     ifStmt         → "if" "(" expression ")" statementBlock  ("else" statementBlock)? ;
     exprStmt       → expression ";" ;
+    assignStmt     → assignment ";" ;
     printStmt      → "print" expression ";" ;
     varDecl        → "var" IDENTIFIER ("=" expression)? ";"
 
-    expression     → assignment ;
-    assignment     → IDENTIFIER "=" assignment | comma ;    // assignment is self recursive to support syntax like a = b = c = some_expression;
+    expression     → comma | assignment ;
+    assignment     → IDENTIFIER "=" expression;    // assignment is self recursive to support syntax like a = b = c = some_expression;
     comma          → ternary (, ternary)* ;
     ternary        → logic_or (? equality : logic_or)* ;
     logic_or       → logic_and ("or" logic_and)* ;
@@ -116,7 +117,7 @@ public class LoxParser {
         return statement();
     }
 
-    private Statement statement() {         //statement        exprStmt | printStmt | varDecl;
+    private Statement statement() { //statement        exprStmt | printStmt | varDecl;
         Statement stmt;
         switch (tokens.get(current).type) {
             case PRINT:
@@ -129,10 +130,19 @@ public class LoxParser {
                 stmt = ifStatement();
                 break;
             default:
-                stmt = expressionStatement();
+                stmt = assignStatement();
                 break;
         }
         return stmt;
+    }
+    
+    private Statement assignStatement() {   //assignStmt     → assignment ";" ;
+        Expression expr = expression();
+        if (expr instanceof Expression.Assignment) {
+            requireToken(TokenType.SEMICOLON, "Missing ';'");
+            return new Statement.ExpressionStmt(expr);
+        }
+        throw new LoxError.ParserError(tokens.get(current - 1), "Expecting an assignment");
     }
 
     private Statement expressionStatement() { //exprStmt         expression ";" ;
@@ -175,29 +185,26 @@ public class LoxParser {
         return new Statement.IfSequence(conditional, thenStmt, elseStmt);
     }
 
-    private Expression expression() { //expression     → assignment ;
-        return assignment();
-    }
+    private Expression expression() { //expression     → comma | assignment ;
+        Expression lValue = comma();
 
-    private Expression assignment() { //assignment       IDENTIFIER "=" assignment | comma ;
-        Expression lValue = comma(); //evaluate everything to the left of the = first
-
-        if (matchesOne(TokenType.EQUAL)) { //If the parser returns a Variable (which will auto consume the identifier)
-            //proceed with assignment logic
-            Token equals = tokens.get(current++);
-            if (lValue instanceof Expression.Variable) {
-                Expression value = assignment();
-
-                return new Expression.Assignment(((Expression.Variable) lValue).varName, value);
-            }
-
-            throw new LoxError.ParserError(equals, "Can't assign to a non-variable");
+        if (matchesOne(TokenType.EQUAL)) {  //Check if assignment
+            lValue = assignment(lValue);
         }
-
         return lValue;
     }
 
-    private Expression comma() { //comma            ternary (, comma)* ????????;
+    private Expression assignment(Expression lValue) { //assignment     → IDENTIFIER "=" expression;
+        Token equals = tokens.get(current++);   
+        if (lValue instanceof Expression.Variable) {    //If the parser returns a Variable (which will auto consume the identifier)
+            Expression value = expression();
+
+            return new Expression.Assignment(((Expression.Variable) lValue).varName, value);
+        }
+        throw new LoxError.ParserError(equals, "Can't assign to a non-variable");
+    }
+
+    private Expression comma() { //comma          → ternary (, ternary)* ;
         Expression expr = ternary();
 
         while (matchesOne(TokenType.COMMA)) {

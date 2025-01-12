@@ -1,8 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.security.auth.login.LoginException;
-
 public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisitor<Object> {
 
     // Expressions MUST always have some Object return value, and statements should probably always be Void return type...
