@@ -12,6 +12,8 @@ public interface ExpressionVisitor<T> {
     T visitAssignment(Expression.Assignment assignment);
 
     T visitComma(Expression.Comma comma);
+
+    T visitFuncCall(Expression.FunctionCall functionCall);
 }
 
 

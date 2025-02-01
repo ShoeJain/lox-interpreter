@@ -1,13 +1,12 @@
 import java.util.ArrayList;
 import java.util.List;
-
 /*
     program        → statementBlock* EOF ;
     statementBlock → "{" statementBlock+ "}" | statement ;  //Note: Currently auto errors if empty block
     statement      → assignStmt | printStmt | varDecl | ifStmt ;
     ifStmt         → "if" "(" expression ")" statementBlock  ("else" statementBlock)? ;
     exprStmt       → expression ";" ;
-    assignStmt     → assignment ";" ;
+    assignStmt     → (assignment | call) ";" ;
     printStmt      → "print" expression ";" ;
     varDecl        → "var" IDENTIFIER ("=" expression)? ";"
 
@@ -22,10 +21,12 @@ import java.util.List;
     term           → factor ( ( "-" | "+" ) factor )* ;
     factor         → unary ( ( "/" | "*" ) unary )* ;
     unary          → ( "!" | "-" ) unary
-                | primary ;
+                | call ;
+    call           → primary ( "(" ternary? ")" )*
     primary        → IDENTIFIER | NUMBER | STRING | "true" | "false" | "nil"
                 | "(" expression ")" ;
  */
+
 public class LoxParser {
     //Note - statement (in the syntactic/semantic sense) cannot contain one another - but statementBlocks can
     //Expressions can contain one another (semantically, evident from the production rules above)
@@ -136,9 +137,10 @@ public class LoxParser {
         return stmt;
     }
     
-    private Statement assignStatement() {   //assignStmt     → assignment ";" ;
+    /* checks for both assignments and function-calls */
+    private Statement assignStatement() {   //assignStmt     → (assignment | call) ";" ;
         Expression expr = expression();
-        if (expr instanceof Expression.Assignment) {
+        if (expr instanceof Expression.Assignment || expr instanceof Expression.FunctionCall) {
             requireToken(TokenType.SEMICOLON, "Missing ';'");
             return new Statement.ExpressionStmt(expr);
         }
@@ -309,13 +311,32 @@ public class LoxParser {
         return expr;
     }
 
-    private Expression unary() { //unary          → (( "!" | "-" ) unary) | primary;
+    private Expression unary() {    //unary          → ( "!" | "-" ) unary | call ;
         if (matchesOne(TokenType.NOT, TokenType.MINUS)) {
             Token operator = tokens.get(current++);
             return new Expression.Unary(operator, unary());
         } else { //primary
-            return primary();
+            return call();
         }
+    }
+    
+    private Expression call() {     //call           → primary ( "(" ternary? ")" )* ;
+        System.out.println("here");
+        Expression primary = primary();
+        if (primary instanceof Expression.Variable && matchesOne(TokenType.LEFT_PAREN)) {
+            System.out.println("here1");
+            //Token leftParen = tokens.get(current);    //don't actually need to discard this...
+            ArrayList<Expression> args = new ArrayList<>();
+            if (!matchesOne(TokenType.RIGHT_PAREN)) {
+                do {
+                    current++;
+                    args.add(ternary());    //TODO: Using ternary() here because expecting conflicts with comma(), potentially. But this excludes assignments from being passed, which should be valid!
+                } while (matchesOne(TokenType.COMMA));
+            }
+            requireToken(TokenType.RIGHT_PAREN, "Incomplete argument list for function");
+            return new Expression.FunctionCall(((Expression.Variable) primary).varName, args);
+        }
+        return primary;
     }
 
     private Expression primary() { //primary        → NUMBER | STRING | TRUE | FALSE | NIL | "(" expression ")" 
@@ -336,7 +357,8 @@ public class LoxParser {
             case IDENTIFIER:
                 return new Expression.Variable(currToken);
             default:
-                throw new LoxError.ParserError(tokens.get(current), "Expected an expression"); //If we fall through the tree and don't find an expression beginner token
+                //System.out.println(currToken.type);
+                throw new LoxError.ParserError(tokens.get(current), "Expected an expression: " + currToken.type + " " + currToken.lexeme); //If we fall through the tree and don't find an expression beginner token
         }
     }
 }

@@ -244,4 +244,13 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
 
         return finalValue;
     }
+
+    @Override
+    public Object visitFuncCall(Expression.FunctionCall functionCall) {
+        System.out.println("func_name: " + functionCall.funcName.lexeme);
+        for (Expression exp : functionCall.args) {
+            System.out.println("arg: " + objectToString(evaluateExpression(exp)));
+        }
+        return null;
+    }
 }

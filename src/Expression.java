@@ -62,6 +62,21 @@ abstract public class Expression {
         }
     }
 
+    static class FunctionCall extends Expression {
+        final Token funcName;
+        final ArrayList<Expression> args;
+
+        FunctionCall(Token funcName, ArrayList<Expression> args) {
+            this.funcName = funcName;
+            this.args = args;
+        }
+
+        @Override
+        <T> T accept(ExpressionVisitor<T> visitor) {
+            return visitor.visitFuncCall(this);
+        }
+    }
+
     static class Assignment extends Expression {
         final Token varName;
         final Expression value;
