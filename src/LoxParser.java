@@ -1,30 +1,30 @@
 import java.util.ArrayList;
 import java.util.List;
 /*
-    program        → statementBlock* EOF ;
-    statementBlock → "{" statementBlock+ "}" | statement ;  //Note: Currently auto errors if empty block
-    statement      → assignStmt | printStmt | varDecl | ifStmt ;
-    ifStmt         → "if" "(" expression ")" statementBlock  ("else" statementBlock)? ;
-    exprStmt       → expression ";" ;
-    assignStmt     → (assignment | call) ";" ;
-    printStmt      → "print" expression ";" ;
-    varDecl        → "var" IDENTIFIER ("=" expression)? ";"
+    program             → statementBlock* EOF ;
+    statementBlock      → "{" statementBlock+ "}" | statement ;  //Note: Currently auto errors if empty block
+    statement           → assignStmt | printStmt | varDecl | ifStmt | funcStmt ;
+    ifStmt              → "if" "(" expression ")" statementBlock  ("else" statementBlock)? ;
+    funcStmt            → "func" IDENTIFIER "(" params ")" statementBlock ; 
+    exprStmt            → expression ";" ;
+    assignStmt          → (assignment | call) ";" ;
+    printStmt           → "print" expression ";" ;
+    varDecl             → "var" IDENTIFIER ("=" expression)? ";"
 
-    expression     → comma | assignment ;
-    assignment     → IDENTIFIER "=" expression;   
-    comma          → ternary (, ternary)* ;
-    ternary        → logic_or (? equality : logic_or)* ;
-    logic_or       → logic_and ("or" logic_and)* ;
-    logic_and      → equality ("and" equality)*;
-    equality       → comparison ( ( "!=" | "==" ) comparison )* ;
-    comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
-    term           → factor ( ( "-" | "+" ) factor )* ;
-    factor         → unary ( ( "/" | "*" ) unary )* ;
-    unary          → ( "!" | "-" ) unary
-                | call ;
-    call           → primary ( "(" ternary? ")" )*
-    primary        → IDENTIFIER | NUMBER | STRING | "true" | "false" | "nil"
-                | "(" expression ")" ;
+    expression          → comma | assignment ;
+    assignment          → IDENTIFIER "=" expression ;   
+    comma               → ternary (, ternary)* ;
+    ternary             → logic_or (? equality : logic_or)* ;
+    logic_or            → logic_and ("or" logic_and)* ;
+    logic_and           → equality ("and" equality)*;
+    equality            → comparison ( ( "!=" | "==" ) comparison )* ;
+    comparison          → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+    term                → factor ( ( "-" | "+" ) factor )* ;
+    factor              → unary ( ( "/" | "*" ) unary )* ;
+    unary               → ( "!" | "-" ) unary | call ;
+    call                → primary ( "(" ternary? ")" )*
+    primary             → IDENTIFIER | NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+    params              → (IDENTIFIER (, IDENTIFIER)*)? ;
  */
 
 public class LoxParser {
@@ -89,7 +89,7 @@ public class LoxParser {
 
             switch (tokens.get(current).type) { //Else if current token is a statement beginner token, we are at a new statement
                 case RETURN:
-                case FUN:
+                case FUNC:
                 case VAR:
                 case FOR:
                 case IF:
@@ -129,6 +129,9 @@ public class LoxParser {
                 break;
             case IF:
                 stmt = ifStatement();
+                break;
+            case FUNC:
+                stmt = funcStatement();
                 break;
             default:
                 stmt = assignStatement();
@@ -170,6 +173,32 @@ public class LoxParser {
         }
         requireToken(TokenType.SEMICOLON, "Missing ';'");
         return new Statement.VarDecl(varToken, initializeValue);
+    }
+
+    private Statement.FuncStatement funcStatement() { //funcStmt            → "func" IDENTIFIER "(" params ")" statementBlock ; 
+        current++;
+        Token funcName = requireToken(TokenType.IDENTIFIER, "Func definition missing identifier");
+        requireToken(TokenType.LEFT_PAREN, "Func missing opening paren for arg list");
+        List<Token> params = params();
+        requireToken(TokenType.RIGHT_PAREN, "Func missing closing paren for arg list");
+        Statement funcStmts = statementBlock();
+
+        return new Statement.FuncStatement(funcName, params, funcStmts);
+    }
+    
+    private List<Token> params() {  //params              → (IDENTIFIER (, IDENTIFIER)*)? ;
+        List<Token> paramList = new ArrayList<>();
+        if (!matchesOne(TokenType.RIGHT_PAREN)) {
+            int numParams = 0;
+            do {
+                current++;
+                if (++numParams > 255)
+                    throw new LoxError.ParserError(tokens.get(current),
+                            "This version of lox only supports 256 parameters for functions");
+                paramList.add(requireToken(TokenType.IDENTIFIER, "Func params must be valid identifiers"));
+            } while (matchesOne(TokenType.COMMA));
+        }
+        return paramList;
     }
 
     private Statement.IfSequence ifStatement() {   //ifStmt         → "if" "(" expression ")" statementBlock  ("else" statementBlock)? ;
@@ -328,9 +357,15 @@ public class LoxParser {
             //Token leftParen = tokens.get(current);    //don't actually need to discard this...
             ArrayList<Expression> args = new ArrayList<>();
             if (!matchesOne(TokenType.RIGHT_PAREN)) {
+                int num_args = 0;
                 do {
                     current++;
-                    args.add(ternary());    //TODO: Using ternary() here because expecting conflicts with comma(), potentially. But this excludes assignments from being passed, which should be valid!
+                    if (++num_args > 255)
+                        throw new LoxError.ParserError(tokens.get(current),
+                                "This version of lox only supports 256 arguments to functions");
+                    
+                    //TODO: Using ternary() here because expecting conflicts with comma(), potentially. But this excludes assignments from being passed, which should be valid!
+                    args.add(ternary());    
                 } while (matchesOne(TokenType.COMMA));
             }
             requireToken(TokenType.RIGHT_PAREN, "Incomplete argument list for function");

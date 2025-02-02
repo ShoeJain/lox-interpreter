@@ -20,7 +20,7 @@ public class Scanner {
         keywords.put("if", TokenType.IF);
         keywords.put("else", TokenType.ELSE);
         keywords.put("return", TokenType.RETURN);
-        keywords.put("fun", TokenType.FUN);
+        keywords.put("func", TokenType.FUNC);
         keywords.put("print", TokenType.PRINT);
         keywords.put("super", TokenType.SUPER);
         keywords.put("this", TokenType.THIS);

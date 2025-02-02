@@ -8,4 +8,6 @@ public interface StatementVisitor<T> {
     T visitBlockStatement(Statement.Block block);
 
     T visitIfStatement(Statement.IfSequence ifSequence);
+
+    T visitFuncStatement(Statement.FuncStatement funcStatement);
 }

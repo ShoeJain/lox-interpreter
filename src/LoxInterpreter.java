@@ -149,7 +149,7 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
     public Object visitAssignment(Expression.Assignment assignment) {
         Object value = evaluateExpression(assignment.value);
         //System.out.println("Assigning value of \'" + assignment.varName.lexeme + "\' to = " + objectToString(value));
-        currentScope.assign(assignment.varName, value);
+        currentScope.assignVar(assignment.varName, value);
 
         return value;   //This may have issues in the future... Maybe this should return the Variable type instead?
     }
@@ -157,7 +157,7 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
     @Override
     public Object visitVariable(Expression.Variable variable) {
         //System.out.println("Getting value of \'" + variable.varName.lexeme + "\' = " + objectToString(env.get(variable.varName)));
-        return currentScope.get(variable.varName);
+        return currentScope.getVar(variable.varName);
     }
 
     @Override
@@ -186,9 +186,9 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
     @Override
     public Void visitVarDeclStatement(Statement.VarDecl varDecl) {
         if (varDecl.expr == null) { //if is just declaration and not initialization as well;
-            currentScope.define(varDecl.varName, null);
+            currentScope.defineVar(varDecl.varName, null);
         }
-        else currentScope.define(varDecl.varName, evaluateExpression(varDecl.expr));
+        else currentScope.defineVar(varDecl.varName, evaluateExpression(varDecl.expr));
 
         return null;
     }
@@ -209,10 +209,16 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
     public Void visitIfStatement(Statement.IfSequence ifSequence) {
         if (isTruthy(evaluateExpression(ifSequence.ifCondition)))
             evaluateStatement(ifSequence.thenStatements);
-        else if (ifSequence.elseStatements != null) 
+        else if (ifSequence.elseStatements != null)
             evaluateStatement(ifSequence.elseStatements);
 
         return null;
+    }
+    
+    @Override
+    public Void visitFuncStatement(Statement.FuncStatement funcStatement) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'visitFuncStatement'");
     }
 
     private boolean isTruthy(Object expression) {

@@ -62,7 +62,7 @@ abstract class Statement {
         final Expression ifCondition;
         final Statement thenStatements;
         final Statement elseStatements;
-        
+
         IfSequence(Expression ifCondition, Statement thenStatements, Statement elseStatements) {
             this.ifCondition = ifCondition;
             this.thenStatements = thenStatements;
@@ -72,6 +72,23 @@ abstract class Statement {
         @Override
         <T> T accept(StatementVisitor<T> visitor) {
             return visitor.visitIfStatement(this);
+        }
+    }
+    
+    static class FuncStatement extends Statement {
+        final Token funcName;
+        final List<Token> paramList;
+        final Statement funcStmts;
+        
+        FuncStatement(Token funcName, List<Token> paramList, Statement funcStmts) {
+            this.funcName = funcName;
+            this.paramList = paramList;
+            this.funcStmts = funcStmts;
+        }
+
+        @Override
+        <T> T accept(StatementVisitor<T> visitor) {
+            return visitor.visitFuncStatement(this);
         }
     }
 }
