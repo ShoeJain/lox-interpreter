@@ -104,10 +104,11 @@ public class LoxParser {
         }
     }
 
-    private Statement statementBlock() {    //statementBlock → "{" statementBlock+ "}" | statement ;
+    private Statement statementBlock() { //statementBlock → "{" statementBlock+ "}" | statement ;
+        List<Statement> statements = new ArrayList<>();
         if (matchesOne(TokenType.LEFT_BRACE)) {
-            Token openingBrace = tokens.get(current++);   //Saving this for easy debug
-            List<Statement> statements = new ArrayList<>();
+            Token openingBrace = tokens.get(current++); //Saving this for easy debug
+            statements = new ArrayList<>();
             while (!matchesOne(TokenType.RIGHT_BRACE) && !isAtEnd()) {
                 statements.add(statementBlock());
             }
@@ -115,6 +116,8 @@ public class LoxParser {
             return new Statement.Block(statements);
         }
 
+        //statements.add(statement());
+        //return new Statement.Block(statements); 
         return statement();
     }
 
@@ -188,16 +191,18 @@ public class LoxParser {
     
     private List<Token> params() {  //params              → (IDENTIFIER (, IDENTIFIER)*)? ;
         List<Token> paramList = new ArrayList<>();
+        
         if (!matchesOne(TokenType.RIGHT_PAREN)) {
             int numParams = 0;
             do {
-                current++;
                 if (++numParams > 255)
                     throw new LoxError.ParserError(tokens.get(current),
                             "This version of lox only supports 256 parameters for functions");
+                //System.out.println("Tk: " + tokens.get(current - 1).type + " " + tokens.get(current - 1).lexeme);
                 paramList.add(requireToken(TokenType.IDENTIFIER, "Func params must be valid identifiers"));
-            } while (matchesOne(TokenType.COMMA));
+            } while (tokens.get(current++).type == TokenType.COMMA);
         }
+        current--;
         return paramList;
     }
 
@@ -350,10 +355,10 @@ public class LoxParser {
     }
     
     private Expression call() {     //call           → primary ( "(" ternary? ")" )* ;
-        System.out.println("here");
+        //System.out.println("here");
         Expression primary = primary();
         if (primary instanceof Expression.Variable && matchesOne(TokenType.LEFT_PAREN)) {
-            System.out.println("here1");
+            //System.out.println("here1");
             //Token leftParen = tokens.get(current);    //don't actually need to discard this...
             ArrayList<Expression> args = new ArrayList<>();
             if (!matchesOne(TokenType.RIGHT_PAREN)) {

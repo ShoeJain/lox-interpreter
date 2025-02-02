@@ -17,7 +17,7 @@ public class LoxCallable {
             env.defineVar(declaration.paramList.get(i), args.get(i));
         }
 
-        Object retVal = declaration.funcStmts.accept(interp);
+        Object retVal = interp.executeBlock((Statement.Block) declaration.funcStmts, env);
         return retVal;
     }
 

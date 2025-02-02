@@ -205,6 +205,17 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
         return null;
     }
 
+    public Void executeBlock(Statement.Block block, LoxEnvironment env) {
+        LoxEnvironment enclosingScope = currentScope;
+        currentScope = env;
+
+        for (Statement stmt : block.statements)
+            evaluateStatement(stmt);
+
+        currentScope = enclosingScope; //Should auto-free block scop
+        return null;
+    }
+
     @Override
     public Void visitIfStatement(Statement.IfSequence ifSequence) {
         if (isTruthy(evaluateExpression(ifSequence.ifCondition)))
@@ -215,10 +226,12 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
         return null;
     }
     
+    //Adds the function declaration/definition to the current scope
     @Override
     public Void visitFuncStatement(Statement.FuncStatement funcStatement) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visitFuncStatement'");
+        LoxCallable loxCall = new LoxCallable(funcStatement);
+        currentScope.defineVar(funcStatement.funcName, loxCall);
+        return null;
     }
 
     private boolean isTruthy(Object expression) {
@@ -253,10 +266,17 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
 
     @Override
     public Object visitFuncCall(Expression.FunctionCall functionCall) {
-        System.out.println("func_name: " + functionCall.funcName.lexeme);
-        for (Expression exp : functionCall.args) {
-            System.out.println("arg: " + objectToString(evaluateExpression(exp)));
+        Object loxCall = currentScope.getVar(functionCall.funcName);
+        if (loxCall instanceof LoxCallable) {
+            ArrayList<Object> evaluatedArgs = new ArrayList<>();
+            for(Expression expr : functionCall.args) {
+                evaluatedArgs.add(evaluateExpression(expr));
+            }
+            return ((LoxCallable) loxCall).call(this, evaluatedArgs);
         }
-        return null;
+
+        throw new LoxError.RuntimeError(functionCall.funcName,
+                    "Attempt to call a variable as a function that is not a function");
+        
     }
 }

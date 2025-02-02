@@ -2,8 +2,8 @@ import java.util.Map;
 import java.util.HashMap;
 
 public class LoxEnvironment {
-    private final Map<String, Object> variables = new HashMap<>();
-    private final Map<String, Integer> functions = new HashMap<>();
+    private final Map<String, Object> variables = new HashMap<>();  //Holds both funcs and vars
+    //private final Map<String, Integer> functions = new HashMap<>();
     LoxEnvironment outerScope;
 
     LoxEnvironment(LoxEnvironment outer) {
@@ -35,7 +35,7 @@ public class LoxEnvironment {
         if (outerScope != null)
             return outerScope.getVar(varName);
 
-        throw new LoxError.RuntimeError(varName, "Attempt to access undefined variable \'" + varName.lexeme + "\'");
+        throw new LoxError.RuntimeError(varName, "Attempt to access undefined variable/function \'" + varName.lexeme + "\'");
     }
     
     boolean exists(Token varName) {
