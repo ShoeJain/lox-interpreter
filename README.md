@@ -9,29 +9,30 @@ I made this because I took a Compilers class at university and walked away feeli
 This interpreter implements the following production rules for the syntax:
 
 ```python
-    program        → statementBlock* EOF ;
-    statementBlock → "{" statementBlock+ "}" | statement ;  //Note: Currently auto errors if empty block
-    statement      → assignStmt | printStmt | varDecl | ifStmt ;
-    ifStmt         → "if" "(" expression ")" statementBlock  ("else" statementBlock)? ;
-    exprStmt       → expression ";" ;
-    assignStmt     → assignment ";" ;
-    printStmt      → "print" expression ";" ;
-    varDecl        → "var" IDENTIFIER ("=" expression)? ";"
+    program             → statement* EOF ;
+    statementBlock      → "{" statement+ "}" ;
+    statement           → assignStmt | printStmt | varDecl | ifStmt | funcStmt | statementBlock ;
+    ifStmt              → "if" "(" expression ")" statement  ("else" statement)? ;
+    funcStmt            → "func" IDENTIFIER "(" params ")" statementBlock ; 
+    exprStmt            → expression ";" ;
+    assignStmt          → (assignment | call) ";" ;
+    printStmt           → "print" expression ";" ;
+    varDecl             → "var" IDENTIFIER ("=" expression)? ";"
 
-    expression     → comma | assignment ;
-    assignment     → IDENTIFIER "=" expression;   
-    comma          → ternary (, ternary)* ;
-    ternary        → logic_or (? equality : logic_or)* ;
-    logic_or       → logic_and ("or" logic_and)* ;
-    logic_and      → equality ("and" equality)*;
-    equality       → comparison ( ( "!=" | "==" ) comparison )* ;
-    comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
-    term           → factor ( ( "-" | "+" ) factor )* ;
-    factor         → unary ( ( "/" | "*" ) unary )* ;
-    unary          → ( "!" | "-" ) unary
-                | primary ;
-    primary        → IDENTIFIER | NUMBER | STRING | "true" | "false" | "nil"
-                | "(" expression ")" ;
+    expression          → comma | assignment ;
+    assignment          → IDENTIFIER "=" expression ;   
+    comma               → ternary (, ternary)* ;
+    ternary             → logic_or (? equality : logic_or)* ;
+    logic_or            → logic_and ("or" logic_and)* ;
+    logic_and           → equality ("and" equality)*;
+    equality            → comparison ( ( "!=" | "==" ) comparison )* ;
+    comparison          → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+    term                → factor ( ( "-" | "+" ) factor )* ;
+    factor              → unary ( ( "/" | "*" ) unary )* ;
+    unary               → ( "!" | "-" ) unary | call ;
+    call                → primary ( "(" ternary? ")" )*
+    primary             → IDENTIFIER | NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+    params              → (IDENTIFIER (, IDENTIFIER)*)? ;
 ```
 
 Almost everything works as you'd normally expect it to. Functions are considered first class citizens, and my version also doesn't allow you to use undefined variables - the original Lox was written to partly be usable via an interactive prompt, which I'm not interested in doing.
