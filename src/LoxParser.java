@@ -1,10 +1,10 @@
 import java.util.ArrayList;
 import java.util.List;
 /*
-    program             → statementBlock* EOF ;
-    statementBlock      → "{" statementBlock+ "}" | statement ;  //Note: Currently auto errors if empty block
-    statement           → assignStmt | printStmt | varDecl | ifStmt | funcStmt ;
-    ifStmt              → "if" "(" expression ")" statementBlock  ("else" statementBlock)? ;
+    program             → statement* EOF ;
+    statementBlock      → "{" statement+ "}" ;
+    statement           → assignStmt | printStmt | varDecl | ifStmt | funcStmt | statementBlock ;
+    ifStmt              → "if" "(" expression ")" statement  ("else" statement)? ;
     funcStmt            → "func" IDENTIFIER "(" params ")" statementBlock ; 
     exprStmt            → expression ";" ;
     assignStmt          → (assignment | call) ";" ;
@@ -42,7 +42,7 @@ public class LoxParser {
         List<Statement> statementList = new ArrayList<>();
         try {
             while (!isAtEnd()) {
-                statementList.add(statementBlock());
+                statementList.add(statement());
             }
         } catch (LoxError.ParserError err) {
             LoxError.printError(LoxError.Module.PARSER, err.token.lineNumber, err.getMessage());
@@ -104,23 +104,7 @@ public class LoxParser {
         }
     }
 
-    private Statement statementBlock() { //statementBlock → "{" statementBlock+ "}" | statement ;
-        List<Statement> statements = new ArrayList<>();
-        if (matchesOne(TokenType.LEFT_BRACE)) {
-            Token openingBrace = tokens.get(current++); //Saving this for easy debug
-            statements = new ArrayList<>();
-            while (!matchesOne(TokenType.RIGHT_BRACE) && !isAtEnd()) {
-                statements.add(statementBlock());
-            }
-            requireToken(TokenType.RIGHT_BRACE, "Unterminated block - block start at ln " + openingBrace.lineNumber);
-            return new Statement.Block(statements);
-        }
-
-        //statements.add(statement());
-        //return new Statement.Block(statements); 
-        return statement();
-    }
-
+    //statement           → assignStmt | printStmt | varDecl | ifStmt | funcStmt | statementBlock;
     private Statement statement() { //statement        exprStmt | printStmt | varDecl;
         Statement stmt;
         switch (tokens.get(current).type) {
@@ -136,6 +120,9 @@ public class LoxParser {
             case FUNC:
                 stmt = funcStatement();
                 break;
+            case LEFT_BRACE:
+                stmt = blockStatement();
+                break;
             default:
                 stmt = assignStatement();
                 break;
@@ -143,6 +130,24 @@ public class LoxParser {
         return stmt;
     }
     
+    //statementBlock      → "{" statement+ "}" ;
+    private Statement blockStatement() { //statementBlock → "{" statementBlock+ "}" | statement ;
+        List<Statement> statements = new ArrayList<>();
+        //if (matchesOne(TokenType.LEFT_BRACE)) {
+        Token openingBrace = tokens.get(current++); 
+        statements = new ArrayList<>();
+        while (!matchesOne(TokenType.RIGHT_BRACE) && !isAtEnd()) {
+            statements.add(statement());
+        }
+        requireToken(TokenType.RIGHT_BRACE, "Unterminated block - block start at ln " + openingBrace.lineNumber);
+        return new Statement.Block(statements);
+        //}
+
+        //statements.add(statement());
+        //return new Statement.Block(statements); 
+        //return statement();
+    }
+
     /* checks for both assignments and function-calls */
     private Statement assignStatement() {   //assignStmt     → (assignment | call) ";" ;
         Expression expr = expression();
@@ -184,14 +189,17 @@ public class LoxParser {
         requireToken(TokenType.LEFT_PAREN, "Func missing opening paren for arg list");
         List<Token> params = params();
         requireToken(TokenType.RIGHT_PAREN, "Func missing closing paren for arg list");
-        Statement funcStmts = statementBlock();
+
+        requireToken(TokenType.LEFT_BRACE, "Missing function block opening");
+        current--;
+        Statement funcStmts = blockStatement();
 
         return new Statement.FuncStatement(funcName, params, funcStmts);
     }
     
-    private List<Token> params() {  //params              → (IDENTIFIER (, IDENTIFIER)*)? ;
+    private List<Token> params() { //params              → (IDENTIFIER (, IDENTIFIER)*)? ;
         List<Token> paramList = new ArrayList<>();
-        
+
         if (!matchesOne(TokenType.RIGHT_PAREN)) {
             int numParams = 0;
             do {
@@ -206,16 +214,17 @@ public class LoxParser {
         return paramList;
     }
 
+    //ifStmt              → "if" "(" expression ")" statement  ("else" statement)? ;
     private Statement.IfSequence ifStatement() {   //ifStmt         → "if" "(" expression ")" statementBlock  ("else" statementBlock)? ;
         current++;
         requireToken(TokenType.LEFT_PAREN, "If statement missing condition opening parenthesis");
         Expression conditional = expression();
         requireToken(TokenType.RIGHT_PAREN, "If statement missing condition closing parenthesis");
-        Statement thenStmt = statementBlock();
+        Statement thenStmt = statement();
         Statement elseStmt = null;
         if (matchesOne(TokenType.ELSE)) {
             current++;
-            elseStmt = statementBlock();
+            elseStmt = statement();
         }
 
         return new Statement.IfSequence(conditional, thenStmt, elseStmt);

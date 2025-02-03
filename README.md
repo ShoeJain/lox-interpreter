@@ -9,6 +9,7 @@ I made this because I took a Compilers class at university and walked away feeli
 This interpreter implements the following production rules for the syntax:
 
 ```python
+# Statements. A program is a list of statements. Statements do not return anything (i.e. they are pure logic)
     program             → statement* EOF ;
     statementBlock      → "{" statement+ "}" ;
     statement           → assignStmt | printStmt | varDecl | ifStmt | funcStmt | statementBlock ;
@@ -19,6 +20,7 @@ This interpreter implements the following production rules for the syntax:
     printStmt           → "print" expression ";" ;
     varDecl             → "var" IDENTIFIER ("=" expression)? ";"
 
+# Expressions. A statement is a sequence of expressions. Expressions always return some value (i.e. they are data and logic)
     expression          → comma | assignment ;
     assignment          → IDENTIFIER "=" expression ;   
     comma               → ternary (, ternary)* ;
@@ -32,6 +34,8 @@ This interpreter implements the following production rules for the syntax:
     unary               → ( "!" | "-" ) unary | call ;
     call                → primary ( "(" ternary? ")" )*
     primary             → IDENTIFIER | NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+
+# Miscellaneous. To simplify and modularize common grammar rules that are neither Statements nor Expressions
     params              → (IDENTIFIER (, IDENTIFIER)*)? ;
 ```
 

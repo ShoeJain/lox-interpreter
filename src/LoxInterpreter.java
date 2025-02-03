@@ -195,34 +195,31 @@ public class LoxInterpreter implements ExpressionVisitor<Object>, StatementVisit
 
     @Override
     public Void visitBlockStatement(Statement.Block block) {
-        LoxEnvironment enclosingScope = currentScope;
-        currentScope = new LoxEnvironment(enclosingScope);
-
         for (Statement stmt : block.statements)
             evaluateStatement(stmt);
-
-        currentScope = enclosingScope; //Should auto-free block scop
         return null;
     }
 
-    public Void executeBlock(Statement.Block block, LoxEnvironment env) {
+    public Void executeNewScope(Statement stmt, LoxEnvironment env) {
         LoxEnvironment enclosingScope = currentScope;
         currentScope = env;
 
-        for (Statement stmt : block.statements)
-            evaluateStatement(stmt);
+        evaluateStatement(stmt);
 
-        currentScope = enclosingScope; //Should auto-free block scop
+        currentScope = enclosingScope; //Reinstate old scope
         return null;
     }
 
     @Override
     public Void visitIfStatement(Statement.IfSequence ifSequence) {
-        if (isTruthy(evaluateExpression(ifSequence.ifCondition)))
-            evaluateStatement(ifSequence.thenStatements);
-        else if (ifSequence.elseStatements != null)
+        if (isTruthy(evaluateExpression(ifSequence.ifCondition))) {
+            LoxEnvironment newScope = new LoxEnvironment(currentScope);
+            executeNewScope(ifSequence.thenStatements, newScope);
+        }
+        else if (ifSequence.elseStatements != null) {
+            LoxEnvironment newScope = new LoxEnvironment(currentScope);
             evaluateStatement(ifSequence.elseStatements);
-
+        }
         return null;
     }
     
